@@ -210,8 +210,16 @@ def create_or_update_repo(project_type):
     try:
         repo = user.get_repo(repo_name)
         created = False
+
     except GithubException:
-        repo = user.create_repo(repo_name)
+
+        repo = user.create_repo(
+            name=repo_name,
+            description=f"AI generated project: {project_type}",
+            private=False,
+            auto_init=True
+        )
+
         created = True
 
     files = generate_project_files(project_type)
