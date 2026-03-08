@@ -1,403 +1,103 @@
 import discord
 from discord.ext import commands, tasks
 import os
-import requests
-import time
-import psutil
-import asyncio
-from datetime import datetime
 from dotenv import load_dotenv
-from github import Github, GithubException
+from monitoring import check_api, monitor_services
+from agents import agents_status
+from builder import run_build_pipeline
 
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_USER = os.getenv("GITHUB_USER")
 
-print("Token loaded successfully")
-
-BOT_VERSION = "3.0.0"
-START_TIME = datetime.utcnow()
-
-last_api_state = True
+BOT_VERSION = "3.3.0"
 
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(
-    command_prefix="!",
-    intents=intents,
-    help_command=None
-)
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 # -----------------------------
+
 # READY EVENT
+
 # -----------------------------
+
 @bot.event
 async def on_ready():
-    print(f"Atlas Control connected as {bot.user}")
-    monitor_services.start()
+print(f"Atlas Control connected as {bot.user}")
+monitor_services.start(bot)
 
 # -----------------------------
-# SERVICE CHECK
-# -----------------------------
-def check_api():
 
-    try:
-
-        start = time.time()
-        response = requests.get("https://google.com", timeout=3)
-        latency = int((time.time() - start) * 1000)
-
-        if response.status_code == 200:
-            return f"🟢 Online ({latency}ms)", True
-
-        return "🔴 Offline", False
-
-    except:
-        return "🔴 Offline", False
-
+# BUILD COMMAND
 
 # -----------------------------
-# STATUS
-# -----------------------------
-@bot.command()
-async def status(ctx):
 
-    api_status, _ = check_api()
-
-    embed = discord.Embed(
-        title="🧠 Atlas Dev Lab",
-        description="System Status Dashboard",
-        color=discord.Color.blue()
-    )
-
-    embed.add_field(name="Store API", value=api_status)
-    embed.add_field(name="Database", value="🟢 Connected")
-    embed.add_field(name="Errors", value="🟢 0")
-
-    await ctx.send(embed=embed)
-
-# -----------------------------
-# HEALTH
-# -----------------------------
-@bot.command()
-async def health(ctx):
-
-    api_status, _ = check_api()
-
-    embed = discord.Embed(
-        title="💚 System Health",
-        color=discord.Color.green()
-    )
-
-    embed.add_field(name="API", value=api_status)
-
-    await ctx.send(embed=embed)
-
-# -----------------------------
-# LATENCY
-# -----------------------------
-@bot.command()
-async def latency(ctx):
-
-    latency = round(bot.latency * 1000)
-    await ctx.send(f"🏓 Discord latency: {latency}ms")
-
-# -----------------------------
-# VERSION
-# -----------------------------
-@bot.command()
-async def version(ctx):
-
-    await ctx.send(f"⚙ Atlas Control Version {BOT_VERSION}")
-
-# -----------------------------
-# UPTIME
-# -----------------------------
-@bot.command()
-async def uptime(ctx):
-
-    uptime_duration = datetime.utcnow() - START_TIME
-
-    hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    await ctx.send(f"⏱ Uptime: {hours}h {minutes}m {seconds}s")
-
-# -----------------------------
-# SERVER MONITOR
-# -----------------------------
-@bot.command()
-async def server(ctx):
-
-    cpu = psutil.cpu_percent()
-    memory = psutil.virtual_memory().percent
-    latency = round(bot.latency * 1000)
-
-    api_status, _ = check_api()
-
-    embed = discord.Embed(
-        title="🖥 Atlas Server Monitor",
-        color=discord.Color.dark_teal()
-    )
-
-    embed.add_field(name="CPU Usage", value=f"{cpu}%")
-    embed.add_field(name="Memory Usage", value=f"{memory}%")
-    embed.add_field(name="Discord Latency", value=f"{latency}ms")
-    embed.add_field(name="API Status", value=api_status)
-
-    await ctx.send(embed=embed)
-
-# -----------------------------
-# AGENTS
-# -----------------------------
-@bot.command()
-async def agents(ctx):
-
-    embed = discord.Embed(
-        title="🤖 AI Agents Online",
-        color=discord.Color.green()
-    )
-
-    embed.add_field(name="Project Manager", value="Coordinating builds")
-    embed.add_field(name="Architect Agent", value="Designing systems")
-    embed.add_field(name="Developer Agent", value="Writing code")
-    embed.add_field(name="QA Agent", value="Testing")
-    embed.add_field(name="Security Agent", value="Scanning vulnerabilities")
-
-    await ctx.send(embed=embed)
-
-# -----------------------------
-# PROJECT GENERATOR
-# -----------------------------
-def generate_project_files(project_type):
-
-    files = {}
-
-    if project_type == "api":
-
-        files["main.py"] = """from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/")
-def home():
-    return {"message":"API running"}
-"""
-
-        files["requirements.txt"] = "fastapi\nuvicorn"
-
-    else:
-
-        files["README.md"] = f"# {project_type}\n\nGenerated by Atlas AI Builder"
-
-    return files
-
-
-# -----------------------------
-# GITHUB BUILDER
-# -----------------------------
-def create_or_update_repo(project_type):
-
-    g = Github(GITHUB_TOKEN)
-
-    repo_name = f"atlas-{project_type}"
-
-    user = g.get_user()
-
-    try:
-        repo = user.get_repo(repo_name)
-        created = False
-
-    except GithubException:
-
-        repo = user.create_repo(
-            name=repo_name,
-            description=f"AI generated project: {project_type}",
-            private=False,
-            auto_init=True
-        )
-
-        created = True
-
-    files = generate_project_files(project_type)
-
-    for filename, content in files.items():
-
-        try:
-
-            existing_file = repo.get_contents(filename)
-
-            repo.update_file(
-                filename,
-                "Atlas update",
-                content,
-                existing_file.sha
-            )
-
-        except GithubException:
-
-            repo.create_file(
-                filename,
-                "Atlas initial commit",
-                content
-            )
-
-    return repo_name, created
-
-
-# -----------------------------
-# BUILD PIPELINE
-# -----------------------------
 @bot.command()
 async def build(ctx, project_type: str):
-
-    guild = ctx.guild
-
-    pm = discord.utils.get(guild.text_channels, name="pm")
-    architect = discord.utils.get(guild.text_channels, name="architect")
-    dev = discord.utils.get(guild.text_channels, name="dev")
-    qa = discord.utils.get(guild.text_channels, name="qa")
-    security = discord.utils.get(guild.text_channels, name="security")
-    updates = discord.utils.get(guild.text_channels, name="project-updates")
-
-    if pm:
-        await pm.send(f"📋 Build request received: {project_type}")
-
-    await asyncio.sleep(2)
-
-    if architect:
-        await architect.send("🧠 Designing system architecture...")
-
-    await asyncio.sleep(2)
-
-    if dev:
-        await dev.send("👨‍💻 Generating project files...")
-
-    await asyncio.sleep(2)
-
-    if qa:
-        await qa.send("🧪 Running automated tests...")
-
-    await asyncio.sleep(2)
-
-    if security:
-        await security.send("🔐 Running dependency scan...")
-
-    await asyncio.sleep(2)
-
-    repo_name, created = create_or_update_repo(project_type)
-
-    if updates:
-
-        embed = discord.Embed(
-            title="📦 Project Generated",
-            color=discord.Color.green()
-        )
-
-        embed.add_field(name="Type", value=project_type)
-        embed.add_field(name="Repository", value=repo_name)
-        embed.add_field(name="Builder", value="Atlas Developer Agent")
-
-        await updates.send(embed=embed)
-
-    await ctx.send(f"🚀 Build pipeline finished: {repo_name}")
-
+await run_build_pipeline(bot, ctx, project_type)
 
 # -----------------------------
-# COMMAND LIST
+
+# AGENTS
+
 # -----------------------------
+
+@bot.command()
+async def agents(ctx):
+await agents_status(ctx)
+
+# -----------------------------
+
+# MONITORING
+
+# -----------------------------
+
+@bot.command()
+async def status(ctx):
+api_status, _ = check_api()
+await ctx.send(f"API Status: {api_status}")
+
+@bot.command()
+async def version(ctx):
+await ctx.send(f"Atlas Version {BOT_VERSION}")
+
+@bot.command()
+async def railway(ctx):
+await ctx.send("Railway container running normally")
+
+# -----------------------------
+
+# HELP
+
+# -----------------------------
+
 @bot.command(name="commands", aliases=["help"])
 async def command_list(ctx):
 
-    embed = discord.Embed(
-        title="📜 Atlas Control Commands",
-        color=discord.Color.purple()
-    )
+```
+embed = discord.Embed(title="Atlas Commands")
 
-    embed.add_field(
-        name="Monitoring",
-        value="""
-!status
-!health
-!server
-!latency
-!uptime
-!version
-""",
-        inline=False
-    )
+embed.add_field(
+    name="Builder",
+    value="""
+```
 
-    embed.add_field(
-        name="AI Builder",
-        value="""
 !build api
 !build website
 !build mobile-app
-!build barber-booking-app
+!build saas
+!build ecommerce
+!build ai-agent
+!build chatbot
+!build discord-bot
 """,
-        inline=False
-    )
+inline=False
+)
 
-    embed.set_footer(text="Atlas Dev Lab Command Center")
+```
+await ctx.send(embed=embed)
+```
 
-    await ctx.send(embed=embed)
-
-
-# -----------------------------
-# SERVICE MONITOR
-# -----------------------------
-@tasks.loop(minutes=5)
-async def monitor_services():
-
-    global last_api_state
-
-    api_status, api_ok = check_api()
-
-    for guild in bot.guilds:
-        for channel in guild.text_channels:
-
-            if channel.name == "errors":
-
-                if not api_ok and last_api_state:
-
-                    embed = discord.Embed(
-                        title="🚨 SERVICE ALERT",
-                        description="Store API is OFFLINE",
-                        color=discord.Color.red()
-                    )
-
-                    await channel.send(embed=embed)
-
-                if api_ok and not last_api_state:
-
-                    embed = discord.Embed(
-                        title="✅ SERVICE RECOVERED",
-                        description="Store API is back online",
-                        color=discord.Color.green()
-                    )
-
-                    await channel.send(embed=embed)
-
-    last_api_state = api_ok
-
-
-# -----------------------------
-# ERROR HANDLER
-# -----------------------------
-@bot.event
-async def on_command_error(ctx, error):
-
-    if isinstance(error, commands.CommandNotFound):
-        await ctx.send("⚠️ Unknown command.")
-    else:
-        print(error)
-        await ctx.send("⚠️ An error occurred.")
-
-
-# -----------------------------
-# RUN BOT
-# -----------------------------
 bot.run(TOKEN)
