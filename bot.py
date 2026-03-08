@@ -17,7 +17,7 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-BOT_VERSION = "3.3.0"
+BOT_VERSION = "3.3.1"
 
 # -----------------------------
 
@@ -42,10 +42,11 @@ help_command=None
 
 @bot.event
 async def on_ready():
-print(f"Atlas Control connected as {bot.user}")
 
 ```
-# Start monitoring loop
+msg = f"Atlas Control connected as {bot.user}"
+print(msg)
+
 monitor = monitor_services()
 monitor.start(bot)
 ```
@@ -58,7 +59,10 @@ monitor.start(bot)
 
 @bot.command()
 async def build(ctx, project_type: str):
+
+```
 await run_build_pipeline(bot, ctx, project_type)
+```
 
 # -----------------------------
 
@@ -68,7 +72,10 @@ await run_build_pipeline(bot, ctx, project_type)
 
 @bot.command()
 async def agents(ctx):
+
+```
 await agents_status(ctx)
+```
 
 # -----------------------------
 
@@ -78,16 +85,25 @@ await agents_status(ctx)
 
 @bot.command()
 async def status(ctx):
+
+```
 api_status, _ = check_api()
 await ctx.send(f"API Status: {api_status}")
+```
 
 @bot.command()
 async def version(ctx):
+
+```
 await ctx.send(f"Atlas Version {BOT_VERSION}")
+```
 
 @bot.command()
 async def railway(ctx):
+
+```
 await ctx.send("Railway container running normally")
+```
 
 # -----------------------------
 
@@ -163,9 +179,11 @@ async def on_command_error(ctx, error):
 
 ```
 if isinstance(error, commands.CommandNotFound):
+
     await ctx.send("⚠️ Unknown command.")
 
 else:
+
     print(error)
     await ctx.send("⚠️ An error occurred.")
 ```
