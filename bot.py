@@ -240,7 +240,7 @@ def push_to_github(project_type):
 
         g = Github(GITHUB_TOKEN)
 
-        repo = g.get_repo(f"{GITHUB_USER}/{GITHUB_REPO}")
+        repo = g.get_repo("xCuhrizmaa/atlas-control-bot")
 
         base_path = f"projects/{project_type}"
 
