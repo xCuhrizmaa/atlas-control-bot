@@ -49,9 +49,13 @@ async def run_build_pipeline(bot, ctx, project_type):
 
     if qa:
         await qa.send("🧪 Running automated tests...")
+except Exception as e:
+    print(f"QA agent error: {e}")
 
     if security:
         await security.send("🔐 Running security scan...")
+except Exception as e:
+    print(f"Security agent error: {e}")
 
     if updates:
 
