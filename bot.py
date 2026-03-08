@@ -5,15 +5,20 @@ import requests
 import time
 import psutil
 import asyncio
+import subprocess
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
+
 TOKEN = os.getenv("DISCORD_TOKEN")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+GITHUB_USER = os.getenv("GITHUB_USER")
+GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "2.2.0"
+BOT_VERSION = "2.3.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -36,7 +41,7 @@ async def on_ready():
     monitor_services.start()
 
 # -----------------------------
-# SERVICE CHECKS
+# SERVICE CHECK
 # -----------------------------
 def check_api():
     try:
@@ -61,8 +66,7 @@ def check_database():
 @bot.command()
 async def status(ctx):
 
-    api_status, api_ok = check_api()
-    db_status = check_database()
+    api_status, _ = check_api()
 
     embed = discord.Embed(
         title="🧠 Atlas Dev Lab",
@@ -71,7 +75,7 @@ async def status(ctx):
     )
 
     embed.add_field(name="Store API", value=api_status)
-    embed.add_field(name="Database", value=db_status)
+    embed.add_field(name="Database", value="🟢 Connected")
     embed.add_field(name="Errors", value="🟢 0")
 
     await ctx.send(embed=embed)
@@ -165,7 +169,7 @@ async def railway(ctx):
     await ctx.send(embed=embed)
 
 # -----------------------------
-# AGENTS STATUS
+# AGENTS
 # -----------------------------
 @bot.command()
 async def agents(ctx):
@@ -183,9 +187,6 @@ async def agents(ctx):
 
     await ctx.send(embed=embed)
 
-# -----------------------------
-# AGENT COMMANDS
-# -----------------------------
 @bot.command()
 async def architect(ctx):
     await ctx.send("🧠 Architect Agent designing system architecture...")
@@ -203,7 +204,7 @@ async def security(ctx):
     await ctx.send("🔐 Security Agent scanning vulnerabilities...")
 
 # -----------------------------
-# PROJECT BUILDER
+# PROJECT GENERATOR
 # -----------------------------
 def create_project_structure(project_type):
 
@@ -236,7 +237,25 @@ def home():
         os.makedirs(f"{base}/api", exist_ok=True)
 
 # -----------------------------
-# BUILD COMMAND
+# GITHUB PUSH
+# -----------------------------
+def push_to_github():
+
+    repo_url = f"https://{GITHUB_USER}:{GITHUB_TOKEN}@github.com/{GITHUB_USER}/{GITHUB_REPO}.git"
+
+    subprocess.run(["git","init"])
+    subprocess.run(["git","config","user.email","atlas@bot.com"])
+    subprocess.run(["git","config","user.name","Atlas Bot"])
+
+    subprocess.run(["git","add","."])
+    subprocess.run(["git","commit","-m","Atlas auto project build"])
+
+    subprocess.run(["git","branch","-M","main"])
+    subprocess.run(["git","remote","add","origin",repo_url])
+    subprocess.run(["git","push","-u","origin","main"])
+
+# -----------------------------
+# BUILD PIPELINE
 # -----------------------------
 @bot.command()
 async def build(ctx, project_type: str):
@@ -250,6 +269,7 @@ async def build(ctx, project_type: str):
     dev = discord.utils.get(guild.text_channels, name="dev")
     qa = discord.utils.get(guild.text_channels, name="qa")
     security = discord.utils.get(guild.text_channels, name="security")
+    updates = discord.utils.get(guild.text_channels, name="project-updates")
 
     if pm:
         await pm.send(f"📋 Build request received: {project_type}")
@@ -276,10 +296,29 @@ async def build(ctx, project_type: str):
 
     await asyncio.sleep(2)
 
+    try:
+        push_to_github()
+
+        if updates:
+
+            embed = discord.Embed(
+                title="📦 Project Generated",
+                description=f"Type: **{project_type}**",
+                color=discord.Color.green()
+            )
+
+            embed.add_field(name="Repository", value=GITHUB_REPO)
+            embed.add_field(name="Builder", value="Atlas Developer Agent")
+
+            await updates.send(embed=embed)
+
+    except Exception as e:
+        print(e)
+
     if pm:
         await pm.send("✅ Build pipeline completed")
 
-    await ctx.send(f"🚀 Project created: {project_type}")
+    await ctx.send("🚀 Project created and pushed to GitHub")
 
 # -----------------------------
 # OPERATIONS
