@@ -70,4 +70,4 @@ async def run_build_pipeline(bot, ctx, project_type):
 
         await updates.send(embed=embed)
 
-    await ctx.send(f"🚀 Build complete → {repo_name}"
+    await ctx.send(f"🚀 Build complete → {repo_name}")
