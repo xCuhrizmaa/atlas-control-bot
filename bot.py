@@ -4,6 +4,7 @@ import os
 import requests
 import time
 import psutil
+import asyncio
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -15,7 +16,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "1.4.0"
+BOT_VERSION = "1.5.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -42,7 +43,7 @@ async def on_ready():
 
     monitor_services.start()
 
-    # Restart alert
+    # restart alert
     for guild in bot.guilds:
         for channel in guild.text_channels:
             if channel.name == "errors":
@@ -62,7 +63,7 @@ async def on_ready():
                 await channel.send(embed=embed)
 
 # -----------------------------
-# SERVICE CHECK FUNCTIONS
+# SERVICE CHECK
 # -----------------------------
 def check_api():
 
@@ -85,7 +86,7 @@ def check_database():
     return "🟢 Connected"
 
 # -----------------------------
-# STATUS DASHBOARD
+# STATUS COMMAND
 # -----------------------------
 @bot.command()
 async def status(ctx):
@@ -103,36 +104,6 @@ async def status(ctx):
     embed.add_field(name="Database", value=db_status, inline=True)
     embed.add_field(name="Errors", value="🟢 0", inline=True)
 
-    embed.set_footer(text="Atlas Monitoring System")
-
-    await ctx.send(embed=embed)
-
-# -----------------------------
-# HEALTH COMMAND
-# -----------------------------
-@bot.command()
-async def health(ctx):
-
-    api_status, api_ok = check_api()
-    discord_latency = round(bot.latency * 1000)
-
-    uptime_duration = datetime.utcnow() - START_TIME
-    hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    embed = discord.Embed(
-        title="🩺 Atlas System Health",
-        description="Complete system diagnostics",
-        color=discord.Color.teal()
-    )
-
-    embed.add_field(name="API Status", value=api_status, inline=False)
-    embed.add_field(name="Discord Latency", value=f"{discord_latency}ms", inline=False)
-    embed.add_field(name="Bot Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
-    embed.add_field(name="Railway Service", value="🟢 Running", inline=False)
-
-    embed.set_footer(text="Atlas Dev Lab Diagnostics")
-
     await ctx.send(embed=embed)
 
 # -----------------------------
@@ -143,9 +114,9 @@ async def server(ctx):
 
     cpu = psutil.cpu_percent()
     memory = psutil.virtual_memory().percent
-    discord_latency = round(bot.latency * 1000)
+    latency = round(bot.latency * 1000)
 
-    api_status, api_ok = check_api()
+    api_status, _ = check_api()
 
     uptime_duration = datetime.utcnow() - START_TIME
     hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
@@ -153,120 +124,109 @@ async def server(ctx):
 
     embed = discord.Embed(
         title="🖥 Atlas Server Monitor",
-        description="Railway Container Diagnostics",
         color=discord.Color.dark_teal()
     )
 
     embed.add_field(name="CPU Usage", value=f"{cpu}%", inline=True)
     embed.add_field(name="Memory Usage", value=f"{memory}%", inline=True)
-    embed.add_field(name="Discord Latency", value=f"{discord_latency}ms", inline=True)
+    embed.add_field(name="Discord Latency", value=f"{latency}ms", inline=True)
 
     embed.add_field(name="API Status", value=api_status, inline=False)
     embed.add_field(name="Bot Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
-    embed.add_field(name="Railway Status", value="🟢 Running", inline=False)
 
     await ctx.send(embed=embed)
 
 # -----------------------------
-# AI AGENTS
+# BUILD SYSTEM
+# -----------------------------
+@bot.command()
+async def build(ctx, project_type: str):
+
+    await ctx.send("🧠 **Architect Agent** analyzing project requirements...")
+    await asyncio.sleep(2)
+
+    if project_type.lower() == "website":
+
+        await ctx.send(
+            "🧠 Architect Agent\n"
+            "Stack Selected:\n"
+            "Frontend: React / Next.js\n"
+            "Backend: FastAPI\n"
+            "Database: PostgreSQL\n"
+            "Deployment: Vercel + Railway"
+        )
+
+    elif project_type.lower() == "api":
+
+        await ctx.send(
+            "🧠 Architect Agent\n"
+            "Stack Selected:\n"
+            "Backend: FastAPI\n"
+            "Database: PostgreSQL\n"
+            "Auth: JWT\n"
+            "Deployment: Railway"
+        )
+
+    elif project_type.lower() == "mobile-app":
+
+        await ctx.send(
+            "🧠 Architect Agent\n"
+            "Stack Selected:\n"
+            "Mobile: React Native + Expo\n"
+            "Backend: FastAPI\n"
+            "Auth: Supabase\n"
+            "Payments: Stripe"
+        )
+
+    await asyncio.sleep(2)
+
+    await ctx.send("👨‍💻 **Developer Agent** generating project structure...")
+    await asyncio.sleep(2)
+
+    await ctx.send(
+        "📁 Project Structure\n"
+        "frontend/\n"
+        "backend/\n"
+        "database/\n"
+        "deployment/\n"
+    )
+
+    await asyncio.sleep(2)
+
+    await ctx.send("🧪 **QA Agent** preparing test suite...")
+    await asyncio.sleep(2)
+
+    await ctx.send("🔐 **Security Agent** scanning dependencies...")
+    await asyncio.sleep(2)
+
+    await ctx.send("🚀 **Deployment Agent** preparing deployment pipeline...")
+
+# -----------------------------
+# AGENTS STATUS
 # -----------------------------
 @bot.command()
 async def agents(ctx):
 
     embed = discord.Embed(
         title="🤖 AI Agents Online",
-        description="Atlas Development Agents",
         color=discord.Color.green()
     )
 
-    embed.add_field(name="Architect Agent", value="Designing system architecture", inline=False)
-    embed.add_field(name="Developer Agent", value="Building application features", inline=False)
-    embed.add_field(name="QA Agent", value="Testing code integrity", inline=False)
-    embed.add_field(name="Security Agent", value="Monitoring vulnerabilities", inline=False)
+    embed.add_field(name="Architect Agent", value="Designing systems", inline=False)
+    embed.add_field(name="Developer Agent", value="Writing code", inline=False)
+    embed.add_field(name="QA Agent", value="Testing systems", inline=False)
+    embed.add_field(name="Security Agent", value="Scanning vulnerabilities", inline=False)
 
     await ctx.send(embed=embed)
 
 # -----------------------------
-# DEPLOY COMMAND
-# -----------------------------
-@bot.command()
-async def deploy(ctx):
-
-    embed = discord.Embed(
-        title="🚀 Deployment Started",
-        description="Deploying the store application...",
-        color=discord.Color.orange()
-    )
-
-    embed.add_field(name="Status", value="Initializing deployment pipeline", inline=False)
-
-    await ctx.send(embed=embed)
-
-# -----------------------------
-# AGENT COMMANDS
-# -----------------------------
-@bot.command()
-async def architect(ctx):
-    await ctx.send("🧠 Architect Agent analyzing system architecture...")
-
-@bot.command()
-async def dev(ctx):
-    await ctx.send("💻 Developer Agent generating code suggestions...")
-
-@bot.command()
-async def qa(ctx):
-    await ctx.send("🧪 QA Agent running automated tests...")
-
-@bot.command()
-async def security(ctx):
-    await ctx.send("🔐 Security Agent scanning for vulnerabilities...")
-
-@bot.command()
-async def logs(ctx):
-    await ctx.send("📊 System Logs\nNo critical errors detected.")
-
-# -----------------------------
-# SYSTEM COMMANDS
-# -----------------------------
-@bot.command()
-async def uptime(ctx):
-
-    uptime_duration = datetime.utcnow() - START_TIME
-    hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    await ctx.send(f"⏱ Bot Uptime: {hours}h {minutes}m {seconds}s")
-
-@bot.command()
-async def version(ctx):
-
-    await ctx.send(f"📦 Atlas Control Version: {BOT_VERSION}")
-
-@bot.command()
-async def latency(ctx):
-
-    latency_ms = round(bot.latency * 1000)
-
-    await ctx.send(f"📡 Discord Latency: {latency_ms}ms")
-
-@bot.command()
-async def railway(ctx):
-
-    await ctx.send(
-        "🚂 Railway Service\n"
-        "Status: 🟢 Running\n"
-        "Auto Deploy: Enabled"
-    )
-
-# -----------------------------
-# COMMAND LIST / HELP
+# COMMAND LIST
 # -----------------------------
 @bot.command(name="commands", aliases=["help"])
 async def command_list(ctx):
 
     embed = discord.Embed(
         title="📜 Atlas Control Commands",
-        description="Available commands in Atlas Dev Lab",
         color=discord.Color.purple()
     )
 
@@ -274,12 +234,7 @@ async def command_list(ctx):
         name="Monitoring",
         value="""
 !status
-!health
 !server
-!uptime
-!latency
-!version
-!railway
 """,
         inline=False
     )
@@ -288,28 +243,9 @@ async def command_list(ctx):
         name="AI Agents",
         value="""
 !agents
-!architect
-!dev
-!qa
-!security
-""",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Operations",
-        value="""
-!deploy
-!logs
-""",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Utility",
-        value="""
-!commands
-!help
+!build website
+!build api
+!build mobile-app
 """,
         inline=False
     )
@@ -319,7 +255,7 @@ async def command_list(ctx):
     await ctx.send(embed=embed)
 
 # -----------------------------
-# AUTOMATIC MONITORING
+# MONITOR SERVICES
 # -----------------------------
 @tasks.loop(minutes=5)
 async def monitor_services():
@@ -341,8 +277,6 @@ async def monitor_services():
                         color=discord.Color.red()
                     )
 
-                    embed.add_field(name="Status", value="🔴 Offline", inline=False)
-
                     await channel.send(embed=embed)
 
                 if api_ok and not last_api_state:
@@ -352,8 +286,6 @@ async def monitor_services():
                         description="Store API is back online",
                         color=discord.Color.green()
                     )
-
-                    embed.add_field(name="Status", value="🟢 Online", inline=False)
 
                     await channel.send(embed=embed)
 
@@ -368,7 +300,7 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send("⚠️ Unknown command.")
     else:
-        await ctx.send("⚠️ An error occurred while processing the command.")
+        await ctx.send("⚠️ An error occurred.")
         print(error)
 
 # -----------------------------
