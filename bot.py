@@ -8,22 +8,16 @@ import asyncio
 from datetime import datetime
 from dotenv import load_dotenv
 
-# -----------------------------
-# ENVIRONMENT
-# -----------------------------
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "2.0.0"
+BOT_VERSION = "2.1.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
 
-# -----------------------------
-# DISCORD SETUP
-# -----------------------------
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -38,16 +32,13 @@ bot = commands.Bot(
 # -----------------------------
 @bot.event
 async def on_ready():
-
     print(f"Atlas Control connected as {bot.user}")
-
     monitor_services.start()
 
 # -----------------------------
 # SERVICE CHECKS
 # -----------------------------
 def check_api():
-
     try:
         start = time.time()
         response = requests.get("https://google.com", timeout=3)
@@ -61,17 +52,14 @@ def check_api():
     except:
         return "🔴 Offline", False
 
-
 def check_database():
     return "🟢 Connected"
-
 
 # -----------------------------
 # STATUS
 # -----------------------------
 @bot.command()
 async def status(ctx):
-
     api_status, api_ok = check_api()
     db_status = check_database()
 
@@ -87,13 +75,11 @@ async def status(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
 # HEALTH
 # -----------------------------
 @bot.command()
 async def health(ctx):
-
     api_status, _ = check_api()
 
     embed = discord.Embed(
@@ -105,40 +91,32 @@ async def health(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
 # LATENCY
 # -----------------------------
 @bot.command()
 async def latency(ctx):
-
     latency = round(bot.latency * 1000)
-
-    await ctx.send(f"🏓 Discord latency: **{latency}ms**")
-
+    await ctx.send(f"🏓 Discord latency: {latency}ms")
 
 # -----------------------------
 # VERSION
 # -----------------------------
 @bot.command()
 async def version(ctx):
-
-    await ctx.send(f"⚙ Atlas Control Version **{BOT_VERSION}**")
-
+    await ctx.send(f"⚙ Atlas Control Version {BOT_VERSION}")
 
 # -----------------------------
 # UPTIME
 # -----------------------------
 @bot.command()
 async def uptime(ctx):
-
     uptime_duration = datetime.utcnow() - START_TIME
 
     hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    await ctx.send(f"⏱ Uptime: **{hours}h {minutes}m {seconds}s**")
-
+    await ctx.send(f"⏱ Uptime: {hours}h {minutes}m {seconds}s")
 
 # -----------------------------
 # SERVER MONITOR
@@ -169,7 +147,6 @@ async def server(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
 # AGENTS STATUS
 # -----------------------------
@@ -181,6 +158,7 @@ async def agents(ctx):
         color=discord.Color.green()
     )
 
+    embed.add_field(name="Project Manager", value="Coordinating builds")
     embed.add_field(name="Architect Agent", value="Designing systems")
     embed.add_field(name="Developer Agent", value="Writing code")
     embed.add_field(name="QA Agent", value="Testing")
@@ -188,40 +166,49 @@ async def agents(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
-# BUILD SYSTEM
+# BUILD SYSTEM (ORCHESTRATED)
 # -----------------------------
 @bot.command()
 async def build(ctx, project_type: str):
 
     guild = ctx.guild
 
-    architect_channel = discord.utils.get(guild.text_channels, name="architect")
-    dev_channel = discord.utils.get(guild.text_channels, name="dev")
-    qa_channel = discord.utils.get(guild.text_channels, name="qa")
-    security_channel = discord.utils.get(guild.text_channels, name="security")
+    pm = discord.utils.get(guild.text_channels, name="pm")
+    architect = discord.utils.get(guild.text_channels, name="architect")
+    dev = discord.utils.get(guild.text_channels, name="dev")
+    qa = discord.utils.get(guild.text_channels, name="qa")
+    security = discord.utils.get(guild.text_channels, name="security")
 
-    if architect_channel:
-        await architect_channel.send("🧠 Architect Agent designing system...")
-
-    await asyncio.sleep(2)
-
-    if dev_channel:
-        await dev_channel.send("👨‍💻 Developer Agent generating project structure...")
+    if pm:
+        await pm.send(f"📋 Build request received: {project_type}")
 
     await asyncio.sleep(2)
 
-    if qa_channel:
-        await qa_channel.send("🧪 QA Agent preparing automated tests...")
+    if architect:
+        await architect.send("🧠 Designing system architecture...")
 
     await asyncio.sleep(2)
 
-    if security_channel:
-        await security_channel.send("🔐 Security Agent scanning dependencies...")
+    if dev:
+        await dev.send("👨‍💻 Generating project structure...")
 
-    await ctx.send(f"🚀 Build pipeline started for **{project_type}**")
+    await asyncio.sleep(2)
 
+    if qa:
+        await qa.send("🧪 Preparing automated tests...")
+
+    await asyncio.sleep(2)
+
+    if security:
+        await security.send("🔐 Scanning dependencies...")
+
+    await asyncio.sleep(2)
+
+    if pm:
+        await pm.send("✅ Build pipeline completed")
+
+    await ctx.send(f"🚀 Build pipeline started for {project_type}")
 
 # -----------------------------
 # AGENT COMMANDS
@@ -241,7 +228,6 @@ async def qa(ctx):
 @bot.command()
 async def security(ctx):
     await ctx.send("🔐 Security Agent scanning vulnerabilities...")
-
 
 # -----------------------------
 # COMMAND LIST
@@ -293,9 +279,8 @@ async def command_list(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
-# MONITOR SERVICES
+# SERVICE MONITOR
 # -----------------------------
 @tasks.loop(minutes=5)
 async def monitor_services():
@@ -331,7 +316,6 @@ async def monitor_services():
 
     last_api_state = api_ok
 
-
 # -----------------------------
 # ERROR HANDLER
 # -----------------------------
@@ -343,7 +327,6 @@ async def on_command_error(ctx, error):
     else:
         print(error)
         await ctx.send("⚠️ An error occurred.")
-
 
 # -----------------------------
 # RUN BOT
