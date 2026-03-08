@@ -1,10 +1,17 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import os
 from dotenv import load_dotenv
+
 from monitoring import check_api, monitor_services
 from agents import agents_status
 from builder import run_build_pipeline
+
+# -----------------------------
+
+# LOAD ENV VARIABLES
+
+# -----------------------------
 
 load_dotenv()
 
@@ -12,10 +19,20 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 BOT_VERSION = "3.3.0"
 
+# -----------------------------
+
+# DISCORD SETUP
+
+# -----------------------------
+
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
+bot = commands.Bot(
+command_prefix="!",
+intents=intents,
+help_command=None
+)
 
 # -----------------------------
 
@@ -26,7 +43,12 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 @bot.event
 async def on_ready():
 print(f"Atlas Control connected as {bot.user}")
-monitor_services.start(bot)
+
+```
+# Start monitoring loop
+monitor = monitor_services()
+monitor.start(bot)
+```
 
 # -----------------------------
 
@@ -40,7 +62,7 @@ await run_build_pipeline(bot, ctx, project_type)
 
 # -----------------------------
 
-# AGENTS
+# AGENTS STATUS
 
 # -----------------------------
 
@@ -50,7 +72,7 @@ await agents_status(ctx)
 
 # -----------------------------
 
-# MONITORING
+# MONITORING COMMANDS
 
 # -----------------------------
 
@@ -69,7 +91,7 @@ await ctx.send("Railway container running normally")
 
 # -----------------------------
 
-# HELP
+# COMMAND LIST
 
 # -----------------------------
 
@@ -77,16 +99,44 @@ await ctx.send("Railway container running normally")
 async def command_list(ctx):
 
 ```
-embed = discord.Embed(title="Atlas Commands")
+embed = discord.Embed(
+    title="Atlas Control Commands",
+    color=discord.Color.purple()
+)
 
 embed.add_field(
-    name="Builder",
+    name="Monitoring",
+    value="""
+```
+
+!status
+!version
+!railway
+""",
+inline=False
+)
+
+```
+embed.add_field(
+    name="Agents",
+    value="""
+```
+
+!agents
+""",
+inline=False
+)
+
+```
+embed.add_field(
+    name="Project Builder",
     value="""
 ```
 
 !build api
 !build website
 !build mobile-app
+!build barber-booking-app
 !build saas
 !build ecommerce
 !build ai-agent
@@ -97,7 +147,33 @@ inline=False
 )
 
 ```
+embed.set_footer(text="Atlas Dev Lab Command Center")
+
 await ctx.send(embed=embed)
 ```
+
+# -----------------------------
+
+# ERROR HANDLER
+
+# -----------------------------
+
+@bot.event
+async def on_command_error(ctx, error):
+
+```
+if isinstance(error, commands.CommandNotFound):
+    await ctx.send("⚠️ Unknown command.")
+
+else:
+    print(error)
+    await ctx.send("⚠️ An error occurred.")
+```
+
+# -----------------------------
+
+# RUN BOT
+
+# -----------------------------
 
 bot.run(TOKEN)
