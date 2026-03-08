@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 import os
 import requests
 import time
+import psutil
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -14,7 +15,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "1.2.1"
+BOT_VERSION = "1.3.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -112,6 +113,38 @@ async def health(ctx):
     embed.add_field(name="Railway Service", value="🟢 Running", inline=False)
 
     embed.set_footer(text="Atlas Dev Lab Diagnostics")
+
+    await ctx.send(embed=embed)
+
+# -----------------------------
+# SERVER MONITOR
+# -----------------------------
+@bot.command()
+async def server(ctx):
+
+    cpu = psutil.cpu_percent()
+    memory = psutil.virtual_memory().percent
+    discord_latency = round(bot.latency * 1000)
+
+    api_status, api_ok = check_api()
+
+    uptime_duration = datetime.utcnow() - START_TIME
+    hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    embed = discord.Embed(
+        title="🖥 Atlas Server Monitor",
+        description="Railway Container Diagnostics",
+        color=discord.Color.dark_teal()
+    )
+
+    embed.add_field(name="CPU Usage", value=f"{cpu}%", inline=True)
+    embed.add_field(name="Memory Usage", value=f"{memory}%", inline=True)
+    embed.add_field(name="Discord Latency", value=f"{discord_latency}ms", inline=True)
+
+    embed.add_field(name="API Status", value=api_status, inline=False)
+    embed.add_field(name="Bot Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
+    embed.add_field(name="Railway Status", value="🟢 Running", inline=False)
 
     await ctx.send(embed=embed)
 
@@ -223,6 +256,7 @@ async def command_list(ctx):
         value="""
 !status
 !health
+!server
 !uptime
 !latency
 !version
