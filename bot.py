@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import os
+import psutil
 from dotenv import load_dotenv
 
 from monitoring import check_api, monitor_services
@@ -14,7 +15,7 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-BOT_VERSION = "3.3.1"
+BOT_VERSION = "3.3.2"
 
 # -----------------------------
 # DISCORD SETUP
@@ -57,6 +58,27 @@ async def agents(ctx):
     await agents_status(ctx)
 
 # -----------------------------
+# SERVER MONITOR
+# -----------------------------
+@bot.command()
+async def server(ctx):
+
+    cpu = psutil.cpu_percent()
+    memory = psutil.virtual_memory().percent
+    latency = round(bot.latency * 1000)
+
+    embed = discord.Embed(
+        title="🖥 Atlas Server Monitor",
+        color=discord.Color.blue()
+    )
+
+    embed.add_field(name="CPU Usage", value=f"{cpu}%")
+    embed.add_field(name="Memory Usage", value=f"{memory}%")
+    embed.add_field(name="Discord Latency", value=f"{latency}ms")
+
+    await ctx.send(embed=embed)
+
+# -----------------------------
 # MONITORING COMMANDS
 # -----------------------------
 @bot.command()
@@ -90,6 +112,7 @@ async def command_list(ctx):
         name="Monitoring",
         value="""
 !status
+!server
 !version
 !railway
 """,
@@ -142,4 +165,4 @@ async def on_command_error(ctx, error):
 # -----------------------------
 # RUN BOT
 # -----------------------------
-bot.run(TOKEN)
+bot.run(TOKEN
