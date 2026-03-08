@@ -1,1 +1,44 @@
+name: Discord Notifications
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send commit notification to Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d '{
+            "embeds": [{
+              "title": "🚀 Atlas Control Update",
+              "color": 5814783,
+              "fields": [
+                {
+                  "name": "Repository",
+                  "value": "${{ github.repository }}",
+                  "inline": true
+                },
+                {
+                  "name": "Author",
+                  "value": "${{ github.actor }}",
+                  "inline": true
+                },
+                {
+                  "name": "Branch",
+                  "value": "${{ github.ref_name }}",
+                  "inline": true
+                },
+                {
+                  "name": "Commit Message",
+                  "value": "${{ github.event.head_commit.message }}",
+                  "inline": false
+                }
+              ]
+            }]
+          }' \
+          ${{ secrets.DISCORD_WEBHOOK }}
