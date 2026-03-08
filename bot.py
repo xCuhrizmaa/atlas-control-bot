@@ -5,9 +5,9 @@ import requests
 import time
 import psutil
 import asyncio
-import subprocess
 from datetime import datetime
 from dotenv import load_dotenv
+from github import Github
 
 load_dotenv()
 
@@ -18,7 +18,7 @@ GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "2.3.1"
+BOT_VERSION = "2.4.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -218,7 +218,7 @@ def create_project_structure(project_type):
 
     if project_type == "api":
 
-        with open(f"{base}/main.py", "w") as f:
+        with open(f"{base}/main.py","w") as f:
             f.write("""from fastapi import FastAPI
 
 app = FastAPI()
@@ -228,34 +228,39 @@ def home():
     return {"message":"API running"}
 """)
 
-        with open(f"{base}/requirements.txt", "w") as f:
+        with open(f"{base}/requirements.txt","w") as f:
             f.write("fastapi\nuvicorn")
 
 # -----------------------------
-# GITHUB PUSH
+# GITHUB PUSH (API VERSION)
 # -----------------------------
-def push_to_github():
+def push_to_github(project_type):
 
     try:
 
-        repo_url = f"https://{GITHUB_USER}:{GITHUB_TOKEN}@github.com/{GITHUB_USER}/{GITHUB_REPO}.git"
+        g = Github(GITHUB_TOKEN)
 
-        subprocess.run(["git","init"], check=True)
+        repo = g.get_user().get_repo(GITHUB_REPO)
 
-        subprocess.run(["git","config","--global","user.email","atlas@bot.com"], check=True)
-        subprocess.run(["git","config","--global","user.name","Atlas Bot"], check=True)
+        base_path = f"projects/{project_type}"
 
-        subprocess.run(["git","add","."], check=True)
+        for root, dirs, files in os.walk(base_path):
 
-        subprocess.run(["git","commit","-m","Atlas automated project build"], check=True)
+            for file in files:
 
-        subprocess.run(["git","branch","-M","main"], check=True)
+                full_path = os.path.join(root, file)
 
-        subprocess.run(["git","remote","remove","origin"], stderr=subprocess.DEVNULL)
+                with open(full_path, "r") as f:
+                    content = f.read()
 
-        subprocess.run(["git","remote","add","origin",repo_url], check=True)
+                repo_path = full_path.replace("\\", "/")
 
-        subprocess.run(["git","push","-u","origin","main"], check=True)
+                repo.create_file(
+                    repo_path,
+                    "Atlas automated project build",
+                    content,
+                    branch="main"
+                )
 
         return True
 
@@ -306,7 +311,7 @@ async def build(ctx, project_type: str):
 
     await asyncio.sleep(2)
 
-    success = push_to_github()
+    success = push_to_github(project_type)
 
     if success and updates:
 
@@ -322,7 +327,7 @@ async def build(ctx, project_type: str):
         await updates.send(embed=embed)
 
     if not success:
-        await ctx.send("⚠️ GitHub push failed. Check Railway logs.")
+        await ctx.send("⚠️ GitHub upload failed. Check Railway logs.")
 
     if pm:
         await pm.send("✅ Build pipeline completed")
