@@ -1,4 +1,3 @@
-}
 import discord
 import asyncio
 from github_tools import create_or_update_repo
