@@ -14,7 +14,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "1.2.0"
+BOT_VERSION = "1.2.1"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -88,13 +88,12 @@ async def status(ctx):
     await ctx.send(embed=embed)
 
 # -----------------------------
-# HEALTH COMMAND (NEW)
+# HEALTH COMMAND
 # -----------------------------
 @bot.command()
 async def health(ctx):
 
     api_status, api_ok = check_api()
-
     discord_latency = round(bot.latency * 1000)
 
     uptime_duration = datetime.utcnow() - START_TIME
@@ -107,29 +106,10 @@ async def health(ctx):
         color=discord.Color.teal()
     )
 
-    embed.add_field(
-        name="API Status",
-        value=api_status,
-        inline=False
-    )
-
-    embed.add_field(
-        name="Discord Latency",
-        value=f"{discord_latency}ms",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Bot Uptime",
-        value=f"{hours}h {minutes}m {seconds}s",
-        inline=False
-    )
-
-    embed.add_field(
-        name="Railway Service",
-        value="🟢 Running",
-        inline=False
-    )
+    embed.add_field(name="API Status", value=api_status, inline=False)
+    embed.add_field(name="Discord Latency", value=f"{discord_latency}ms", inline=False)
+    embed.add_field(name="Bot Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=False)
+    embed.add_field(name="Railway Service", value="🟢 Running", inline=False)
 
     embed.set_footer(text="Atlas Dev Lab Diagnostics")
 
@@ -166,11 +146,7 @@ async def deploy(ctx):
         color=discord.Color.orange()
     )
 
-    embed.add_field(
-        name="Status",
-        value="Initializing deployment pipeline",
-        inline=False
-    )
+    embed.add_field(name="Status", value="Initializing deployment pipeline", inline=False)
 
     await ctx.send(embed=embed)
 
@@ -207,25 +183,19 @@ async def uptime(ctx):
     hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    await ctx.send(
-        f"⏱ Bot Uptime: {hours}h {minutes}m {seconds}s"
-    )
+    await ctx.send(f"⏱ Bot Uptime: {hours}h {minutes}m {seconds}s")
 
 @bot.command()
 async def version(ctx):
 
-    await ctx.send(
-        f"📦 Atlas Control Version: {BOT_VERSION}"
-    )
+    await ctx.send(f"📦 Atlas Control Version: {BOT_VERSION}")
 
 @bot.command()
 async def latency(ctx):
 
     latency_ms = round(bot.latency * 1000)
 
-    await ctx.send(
-        f"📡 Discord Latency: {latency_ms}ms"
-    )
+    await ctx.send(f"📡 Discord Latency: {latency_ms}ms")
 
 @bot.command()
 async def railway(ctx):
@@ -239,8 +209,7 @@ async def railway(ctx):
 # -----------------------------
 # COMMAND LIST / HELP
 # -----------------------------
-@bot.command(name="commands")
-@bot.command(name="help")
+@bot.command(name="commands", aliases=["help"])
 async def command_list(ctx):
 
     embed = discord.Embed(
@@ -319,11 +288,7 @@ async def monitor_services():
                         color=discord.Color.red()
                     )
 
-                    embed.add_field(
-                        name="Status",
-                        value="🔴 Offline",
-                        inline=False
-                    )
+                    embed.add_field(name="Status", value="🔴 Offline", inline=False)
 
                     await channel.send(embed=embed)
 
@@ -335,11 +300,7 @@ async def monitor_services():
                         color=discord.Color.green()
                     )
 
-                    embed.add_field(
-                        name="Status",
-                        value="🟢 Online",
-                        inline=False
-                    )
+                    embed.add_field(name="Status", value="🟢 Online", inline=False)
 
                     await channel.send(embed=embed)
 
