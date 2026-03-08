@@ -14,7 +14,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "1.1.2"
+BOT_VERSION = "1.2.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -25,8 +25,11 @@ last_api_state = True
 intents = discord.Intents.default()
 intents.message_content = True
 
-# DISABLE DEFAULT HELP COMMAND (FIX)
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=None
+)
 
 # -----------------------------
 # BOT READY EVENT
@@ -37,20 +40,6 @@ async def on_ready():
     print(f"Atlas Control connected as {bot.user}")
 
     monitor_services.start()
-
-    for guild in bot.guilds:
-        for channel in guild.text_channels:
-            if channel.name == "deployments":
-
-                embed = discord.Embed(
-                    title="🚀 Deployment Detected",
-                    description=f"Atlas Control v{BOT_VERSION} is now running",
-                    color=discord.Color.green()
-                )
-
-                embed.set_footer(text="Atlas Deployment Monitor")
-
-                await channel.send(embed=embed)
 
 # -----------------------------
 # SERVICE CHECK FUNCTIONS
@@ -99,6 +88,54 @@ async def status(ctx):
     await ctx.send(embed=embed)
 
 # -----------------------------
+# HEALTH COMMAND (NEW)
+# -----------------------------
+@bot.command()
+async def health(ctx):
+
+    api_status, api_ok = check_api()
+
+    discord_latency = round(bot.latency * 1000)
+
+    uptime_duration = datetime.utcnow() - START_TIME
+    hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    embed = discord.Embed(
+        title="🩺 Atlas System Health",
+        description="Complete system diagnostics",
+        color=discord.Color.teal()
+    )
+
+    embed.add_field(
+        name="API Status",
+        value=api_status,
+        inline=False
+    )
+
+    embed.add_field(
+        name="Discord Latency",
+        value=f"{discord_latency}ms",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Bot Uptime",
+        value=f"{hours}h {minutes}m {seconds}s",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Railway Service",
+        value="🟢 Running",
+        inline=False
+    )
+
+    embed.set_footer(text="Atlas Dev Lab Diagnostics")
+
+    await ctx.send(embed=embed)
+
+# -----------------------------
 # AI AGENTS
 # -----------------------------
 @bot.command()
@@ -129,7 +166,11 @@ async def deploy(ctx):
         color=discord.Color.orange()
     )
 
-    embed.add_field(name="Status", value="Initializing deployment pipeline", inline=False)
+    embed.add_field(
+        name="Status",
+        value="Initializing deployment pipeline",
+        inline=False
+    )
 
     await ctx.send(embed=embed)
 
@@ -212,6 +253,7 @@ async def command_list(ctx):
         name="Monitoring",
         value="""
 !status
+!health
 !uptime
 !latency
 !version
@@ -277,7 +319,11 @@ async def monitor_services():
                         color=discord.Color.red()
                     )
 
-                    embed.add_field(name="Status", value="🔴 Offline", inline=False)
+                    embed.add_field(
+                        name="Status",
+                        value="🔴 Offline",
+                        inline=False
+                    )
 
                     await channel.send(embed=embed)
 
@@ -289,7 +335,11 @@ async def monitor_services():
                         color=discord.Color.green()
                     )
 
-                    embed.add_field(name="Status", value="🟢 Online", inline=False)
+                    embed.add_field(
+                        name="Status",
+                        value="🟢 Online",
+                        inline=False
+                    )
 
                     await channel.send(embed=embed)
 
