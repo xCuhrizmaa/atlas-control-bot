@@ -74,4 +74,4 @@ def create_or_update_repo(project_type):
                 content
             )
 
-    return repo_name, ve
+    return repo_name, version
