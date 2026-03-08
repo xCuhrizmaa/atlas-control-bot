@@ -157,8 +157,8 @@ async def on_command_error(ctx, error):
         return  # prevents duplicate responses
 
     print(error)
-    await ctx.send("⚠️ An error occurred.")
-
+    await ctx.send(f"⚠️ Error: {error}")
+    
 # -----------------------------
 # RUN BOT
 # -----------------------------
