@@ -29,17 +29,21 @@ async def run_build_pipeline(bot, ctx, project_type):
     security = discord.utils.get(guild.text_channels, name="security")
     updates = discord.utils.get(guild.text_channels, name="project-updates")
 
+    # PM agent
     if pm:
         await pm.send(f"📋 Build request received: {project_type}")
 
+    # Architect agent
     if architect:
         await architect.send("🧠 Designing architecture...")
 
+    # Architecture plan
     if plans:
         await plans.send(generate_architecture(project_type))
 
-        await asyncio.sleep(1)
+    await asyncio.sleep(1)
 
+    # Developer agent
     if dev:
         await dev.send("👨‍💻 Generating project code...")
 
@@ -47,16 +51,15 @@ async def run_build_pipeline(bot, ctx, project_type):
 
     await asyncio.sleep(1)
 
+    # QA agent
     if qa:
         await qa.send("🧪 Running automated tests...")
-except Exception as e:
-    print(f"QA agent error: {e}")
 
+    # Security agent
     if security:
         await security.send("🔐 Running security scan...")
-except Exception as e:
-    print(f"Security agent error: {e}")
 
+    # Project update
     if updates:
 
         embed = discord.Embed(
@@ -70,4 +73,4 @@ except Exception as e:
 
         await updates.send(embed=embed)
 
-    await ctx.send(f"🚀 Build complete → {repo_name}")
+    await ctx.send(f"🚀 Build complete → {repo_name}"
