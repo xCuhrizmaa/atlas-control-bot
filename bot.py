@@ -142,4 +142,4 @@ async def on_command_error(ctx, error):
 # -----------------------------
 # RUN BOT
 # -----------------------------
-bot.run(TOKEN
+bot.run(TOKEN)
