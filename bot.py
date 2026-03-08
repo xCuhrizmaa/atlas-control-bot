@@ -14,7 +14,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "1.1.1"
+BOT_VERSION = "1.1.2"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -25,7 +25,8 @@ last_api_state = True
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+# DISABLE DEFAULT HELP COMMAND (FIX)
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 # -----------------------------
 # BOT READY EVENT
@@ -74,7 +75,6 @@ def check_api():
 def check_database():
     return "🟢 Connected"
 
-
 # -----------------------------
 # STATUS DASHBOARD
 # -----------------------------
@@ -98,9 +98,8 @@ async def status(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
-# AI AGENTS STATUS
+# AI AGENTS
 # -----------------------------
 @bot.command()
 async def agents(ctx):
@@ -118,7 +117,6 @@ async def agents(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
 # DEPLOY COMMAND
 # -----------------------------
@@ -135,7 +133,6 @@ async def deploy(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
 # AGENT COMMANDS
 # -----------------------------
@@ -143,26 +140,21 @@ async def deploy(ctx):
 async def architect(ctx):
     await ctx.send("🧠 Architect Agent analyzing system architecture...")
 
-
 @bot.command()
 async def dev(ctx):
     await ctx.send("💻 Developer Agent generating code suggestions...")
-
 
 @bot.command()
 async def qa(ctx):
     await ctx.send("🧪 QA Agent running automated tests...")
 
-
 @bot.command()
 async def security(ctx):
     await ctx.send("🔐 Security Agent scanning for vulnerabilities...")
 
-
 @bot.command()
 async def logs(ctx):
     await ctx.send("📊 System Logs\nNo critical errors detected.")
-
 
 # -----------------------------
 # SYSTEM COMMANDS
@@ -178,14 +170,12 @@ async def uptime(ctx):
         f"⏱ Bot Uptime: {hours}h {minutes}m {seconds}s"
     )
 
-
 @bot.command()
 async def version(ctx):
 
     await ctx.send(
         f"📦 Atlas Control Version: {BOT_VERSION}"
     )
-
 
 @bot.command()
 async def latency(ctx):
@@ -196,7 +186,6 @@ async def latency(ctx):
         f"📡 Discord Latency: {latency_ms}ms"
     )
 
-
 @bot.command()
 async def railway(ctx):
 
@@ -205,7 +194,6 @@ async def railway(ctx):
         "Status: 🟢 Running\n"
         "Auto Deploy: Enabled"
     )
-
 
 # -----------------------------
 # COMMAND LIST / HELP
@@ -266,7 +254,6 @@ async def command_list(ctx):
 
     await ctx.send(embed=embed)
 
-
 # -----------------------------
 # AUTOMATIC MONITORING
 # -----------------------------
@@ -308,7 +295,6 @@ async def monitor_services():
 
     last_api_state = api_ok
 
-
 # -----------------------------
 # ERROR HANDLING
 # -----------------------------
@@ -320,7 +306,6 @@ async def on_command_error(ctx, error):
     else:
         await ctx.send("⚠️ An error occurred while processing the command.")
         print(error)
-
 
 # -----------------------------
 # RUN BOT
