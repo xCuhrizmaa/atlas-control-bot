@@ -8,9 +8,37 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Send message to Discord
+      - name: Send Discord Embed
         run: |
           curl -H "Content-Type: application/json" \
-          -d "{\"content\":\"🚀 New commit pushed to atlas-control-bot by ${{ github.actor }}\"}" \
+          -d '{
+            "embeds": [{
+              "title": "🚀 New Commit Pushed",
+              "color": 5814783,
+              "fields": [
+                {
+                  "name": "Repository",
+                  "value": "${{ github.repository }}",
+                  "inline": true
+                },
+                {
+                  "name": "Author",
+                  "value": "${{ github.actor }}",
+                  "inline": true
+                },
+                {
+                  "name": "Branch",
+                  "value": "${{ github.ref_name }}",
+                  "inline": true
+                },
+                {
+                  "name": "Commit Message",
+                  "value": "${{ github.event.head_commit.message }}",
+                  "inline": false
+                }
+              ]
+            }]
+          }' \
           ${{ secrets.DISCORD_WEBHOOK }}
