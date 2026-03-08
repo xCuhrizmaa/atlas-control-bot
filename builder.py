@@ -38,7 +38,7 @@ async def run_build_pipeline(bot, ctx, project_type):
     if plans:
         await plans.send(generate_architecture(project_type))
 
-    await asyncio.sleep(1)
+        await asyncio.sleep(1)
 
     if dev:
         await dev.send("👨‍💻 Generating project code...")
@@ -64,6 +64,6 @@ async def run_build_pipeline(bot, ctx, project_type):
         embed.add_field(name="Repository", value=repo_name)
         embed.add_field(name="Version", value=version)
 
-        await updates.send(embed)
+        await updates.send(embed=embed)
 
-    await ctx.send(f"🚀 Build complete → {repo_name
+    await ctx.send(f"🚀 Build complete → {repo_name}")
