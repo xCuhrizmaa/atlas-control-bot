@@ -8,11 +8,8 @@ from agents import agents_status
 from builder import run_build_pipeline
 
 # -----------------------------
-
 # LOAD ENV VARIABLES
-
 # -----------------------------
-
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -20,135 +17,96 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 BOT_VERSION = "3.3.1"
 
 # -----------------------------
-
 # DISCORD SETUP
-
 # -----------------------------
-
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(
-command_prefix="!",
-intents=intents,
-help_command=None
+    command_prefix="!",
+    intents=intents,
+    help_command=None
 )
 
 # -----------------------------
-
 # READY EVENT
-
 # -----------------------------
-
 @bot.event
 async def on_ready():
 
-```
-msg = f"Atlas Control connected as {bot.user}"
-print(msg)
+    msg = f"Atlas Control connected as {bot.user}"
+    print(msg)
 
-monitor = monitor_services()
-monitor.start(bot)
-```
+    monitor = monitor_services()
+    monitor.start(bot)
 
 # -----------------------------
-
 # BUILD COMMAND
-
 # -----------------------------
-
 @bot.command()
 async def build(ctx, project_type: str):
 
-```
-await run_build_pipeline(bot, ctx, project_type)
-```
+    await run_build_pipeline(bot, ctx, project_type)
 
 # -----------------------------
-
 # AGENTS STATUS
-
 # -----------------------------
-
 @bot.command()
 async def agents(ctx):
 
-```
-await agents_status(ctx)
-```
+    await agents_status(ctx)
 
 # -----------------------------
-
 # MONITORING COMMANDS
-
 # -----------------------------
-
 @bot.command()
 async def status(ctx):
 
-```
-api_status, _ = check_api()
-await ctx.send(f"API Status: {api_status}")
-```
+    api_status, _ = check_api()
+    await ctx.send(f"API Status: {api_status}")
 
 @bot.command()
 async def version(ctx):
 
-```
-await ctx.send(f"Atlas Version {BOT_VERSION}")
-```
+    await ctx.send(f"Atlas Version {BOT_VERSION}")
 
 @bot.command()
 async def railway(ctx):
 
-```
-await ctx.send("Railway container running normally")
-```
+    await ctx.send("Railway container running normally")
 
 # -----------------------------
-
 # COMMAND LIST
-
 # -----------------------------
-
 @bot.command(name="commands", aliases=["help"])
 async def command_list(ctx):
 
-```
-embed = discord.Embed(
-    title="Atlas Control Commands",
-    color=discord.Color.purple()
-)
+    embed = discord.Embed(
+        title="Atlas Control Commands",
+        color=discord.Color.purple()
+    )
 
-embed.add_field(
-    name="Monitoring",
-    value="""
-```
-
+    embed.add_field(
+        name="Monitoring",
+        value="""
 !status
 !version
 !railway
 """,
-inline=False
-)
+        inline=False
+    )
 
-```
-embed.add_field(
-    name="Agents",
-    value="""
-```
-
+    embed.add_field(
+        name="Agents",
+        value="""
 !agents
 """,
-inline=False
-)
+        inline=False
+    )
 
-```
-embed.add_field(
-    name="Project Builder",
-    value="""
-```
-
+    embed.add_field(
+        name="Project Builder",
+        value="""
 !build api
 !build website
 !build mobile-app
@@ -159,39 +117,29 @@ embed.add_field(
 !build chatbot
 !build discord-bot
 """,
-inline=False
-)
+        inline=False
+    )
 
-```
-embed.set_footer(text="Atlas Dev Lab Command Center")
+    embed.set_footer(text="Atlas Dev Lab Command Center")
 
-await ctx.send(embed=embed)
-```
+    await ctx.send(embed=embed)
 
 # -----------------------------
-
 # ERROR HANDLER
-
 # -----------------------------
-
 @bot.event
 async def on_command_error(ctx, error):
 
-```
-if isinstance(error, commands.CommandNotFound):
+    if isinstance(error, commands.CommandNotFound):
 
-    await ctx.send("⚠️ Unknown command.")
+        await ctx.send("⚠️ Unknown command.")
 
-else:
+    else:
 
-    print(error)
-    await ctx.send("⚠️ An error occurred.")
-```
+        print(error)
+        await ctx.send("⚠️ An error occurred.")
 
 # -----------------------------
-
 # RUN BOT
-
 # -----------------------------
-
-bot.run(TOKEN)
+bot.run(TOKEN
