@@ -154,13 +154,10 @@ async def command_list(ctx):
 async def on_command_error(ctx, error):
 
     if isinstance(error, commands.CommandNotFound):
+        return  # prevents duplicate responses
 
-        await ctx.send("⚠️ Unknown command.")
-
-    else:
-
-        print(error)
-        await ctx.send("⚠️ An error occurred.")
+    print(error)
+    await ctx.send("⚠️ An error occurred.")
 
 # -----------------------------
 # RUN BOT
