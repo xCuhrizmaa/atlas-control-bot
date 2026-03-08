@@ -37,10 +37,9 @@ async def run_build_pipeline(bot, ctx, project_type):
         await architect.send("🧠 Designing architecture...")
 
     # Architecture plan
-    if plans:
         architecture = interpret_project(project_type)
     if plans:
-    await plans.send(architecture)
+        await plans.send(architecture)
     
 
     await asyncio.sleep(1)
