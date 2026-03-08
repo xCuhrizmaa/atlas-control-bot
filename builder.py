@@ -1,6 +1,7 @@
 import discord
 import asyncio
 from github_tools import create_or_update_repo
+from atlas_brain import interpret_project
 
 
 def generate_architecture(project_type):
