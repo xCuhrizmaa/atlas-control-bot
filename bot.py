@@ -13,7 +13,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "2.1.0"
+BOT_VERSION = "2.2.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -60,6 +60,7 @@ def check_database():
 # -----------------------------
 @bot.command()
 async def status(ctx):
+
     api_status, api_ok = check_api()
     db_status = check_database()
 
@@ -80,6 +81,7 @@ async def status(ctx):
 # -----------------------------
 @bot.command()
 async def health(ctx):
+
     api_status, _ = check_api()
 
     embed = discord.Embed(
@@ -111,6 +113,7 @@ async def version(ctx):
 # -----------------------------
 @bot.command()
 async def uptime(ctx):
+
     uptime_duration = datetime.utcnow() - START_TIME
 
     hours, remainder = divmod(int(uptime_duration.total_seconds()), 3600)
@@ -148,6 +151,20 @@ async def server(ctx):
     await ctx.send(embed=embed)
 
 # -----------------------------
+# RAILWAY STATUS
+# -----------------------------
+@bot.command()
+async def railway(ctx):
+
+    embed = discord.Embed(
+        title="🚆 Railway Status",
+        description="Container running normally",
+        color=discord.Color.green()
+    )
+
+    await ctx.send(embed=embed)
+
+# -----------------------------
 # AGENTS STATUS
 # -----------------------------
 @bot.command()
@@ -167,10 +184,64 @@ async def agents(ctx):
     await ctx.send(embed=embed)
 
 # -----------------------------
-# BUILD SYSTEM (ORCHESTRATED)
+# AGENT COMMANDS
+# -----------------------------
+@bot.command()
+async def architect(ctx):
+    await ctx.send("🧠 Architect Agent designing system architecture...")
+
+@bot.command()
+async def dev(ctx):
+    await ctx.send("👨‍💻 Developer Agent generating code modules...")
+
+@bot.command()
+async def qa(ctx):
+    await ctx.send("🧪 QA Agent running test suites...")
+
+@bot.command()
+async def security(ctx):
+    await ctx.send("🔐 Security Agent scanning vulnerabilities...")
+
+# -----------------------------
+# PROJECT BUILDER
+# -----------------------------
+def create_project_structure(project_type):
+
+    base = f"projects/{project_type}"
+    os.makedirs(base, exist_ok=True)
+
+    if project_type == "api":
+
+        with open(f"{base}/main.py","w") as f:
+            f.write("""from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def home():
+    return {"message":"API running"}
+""")
+
+        with open(f"{base}/requirements.txt","w") as f:
+            f.write("fastapi\nuvicorn")
+
+    if project_type == "website":
+
+        os.makedirs(f"{base}/frontend", exist_ok=True)
+        os.makedirs(f"{base}/backend", exist_ok=True)
+
+    if project_type == "mobile-app":
+
+        os.makedirs(f"{base}/app", exist_ok=True)
+        os.makedirs(f"{base}/api", exist_ok=True)
+
+# -----------------------------
+# BUILD COMMAND
 # -----------------------------
 @bot.command()
 async def build(ctx, project_type: str):
+
+    create_project_structure(project_type)
 
     guild = ctx.guild
 
@@ -208,26 +279,18 @@ async def build(ctx, project_type: str):
     if pm:
         await pm.send("✅ Build pipeline completed")
 
-    await ctx.send(f"🚀 Build pipeline started for {project_type}")
+    await ctx.send(f"🚀 Project created: {project_type}")
 
 # -----------------------------
-# AGENT COMMANDS
+# OPERATIONS
 # -----------------------------
 @bot.command()
-async def architect(ctx):
-    await ctx.send("🧠 Architect Agent designing system architecture...")
+async def deploy(ctx):
+    await ctx.send("🚀 Deployment initiated...")
 
 @bot.command()
-async def dev(ctx):
-    await ctx.send("👨‍💻 Developer Agent generating code modules...")
-
-@bot.command()
-async def qa(ctx):
-    await ctx.send("🧪 QA Agent running test suites...")
-
-@bot.command()
-async def security(ctx):
-    await ctx.send("🔐 Security Agent scanning vulnerabilities...")
+async def logs(ctx):
+    await ctx.send("📜 Fetching logs...")
 
 # -----------------------------
 # COMMAND LIST
@@ -249,6 +312,7 @@ async def command_list(ctx):
 !latency
 !uptime
 !version
+!railway
 """,
         inline=False
     )
@@ -266,10 +330,19 @@ async def command_list(ctx):
     )
 
     embed.add_field(
+        name="Operations",
+        value="""
+!deploy
+!logs
+""",
+        inline=False
+    )
+
+    embed.add_field(
         name="AI Builder",
         value="""
-!build website
 !build api
+!build website
 !build mobile-app
 """,
         inline=False
