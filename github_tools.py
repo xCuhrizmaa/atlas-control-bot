@@ -1,4 +1,3 @@
-ean"}
 import os
 from github import Github, GithubException
 
