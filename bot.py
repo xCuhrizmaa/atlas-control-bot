@@ -18,7 +18,7 @@ GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "2.3.0"
+BOT_VERSION = "2.3.1"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -44,7 +44,9 @@ async def on_ready():
 # SERVICE CHECK
 # -----------------------------
 def check_api():
+
     try:
+
         start = time.time()
         response = requests.get("https://google.com", timeout=3)
         latency = int((time.time() - start) * 1000)
@@ -56,6 +58,7 @@ def check_api():
 
     except:
         return "🔴 Offline", False
+
 
 def check_database():
     return "🟢 Connected"
@@ -102,6 +105,7 @@ async def health(ctx):
 # -----------------------------
 @bot.command()
 async def latency(ctx):
+
     latency = round(bot.latency * 1000)
     await ctx.send(f"🏓 Discord latency: {latency}ms")
 
@@ -110,6 +114,7 @@ async def latency(ctx):
 # -----------------------------
 @bot.command()
 async def version(ctx):
+
     await ctx.send(f"⚙ Atlas Control Version {BOT_VERSION}")
 
 # -----------------------------
@@ -213,7 +218,7 @@ def create_project_structure(project_type):
 
     if project_type == "api":
 
-        with open(f"{base}/main.py","w") as f:
+        with open(f"{base}/main.py", "w") as f:
             f.write("""from fastapi import FastAPI
 
 app = FastAPI()
@@ -223,36 +228,41 @@ def home():
     return {"message":"API running"}
 """)
 
-        with open(f"{base}/requirements.txt","w") as f:
+        with open(f"{base}/requirements.txt", "w") as f:
             f.write("fastapi\nuvicorn")
-
-    if project_type == "website":
-
-        os.makedirs(f"{base}/frontend", exist_ok=True)
-        os.makedirs(f"{base}/backend", exist_ok=True)
-
-    if project_type == "mobile-app":
-
-        os.makedirs(f"{base}/app", exist_ok=True)
-        os.makedirs(f"{base}/api", exist_ok=True)
 
 # -----------------------------
 # GITHUB PUSH
 # -----------------------------
 def push_to_github():
 
-    repo_url = f"https://{GITHUB_USER}:{GITHUB_TOKEN}@github.com/{GITHUB_USER}/{GITHUB_REPO}.git"
+    try:
 
-    subprocess.run(["git","init"])
-    subprocess.run(["git","config","user.email","atlas@bot.com"])
-    subprocess.run(["git","config","user.name","Atlas Bot"])
+        repo_url = f"https://{GITHUB_USER}:{GITHUB_TOKEN}@github.com/{GITHUB_USER}/{GITHUB_REPO}.git"
 
-    subprocess.run(["git","add","."])
-    subprocess.run(["git","commit","-m","Atlas auto project build"])
+        subprocess.run(["git","init"], check=True)
 
-    subprocess.run(["git","branch","-M","main"])
-    subprocess.run(["git","remote","add","origin",repo_url])
-    subprocess.run(["git","push","-u","origin","main"])
+        subprocess.run(["git","config","--global","user.email","atlas@bot.com"], check=True)
+        subprocess.run(["git","config","--global","user.name","Atlas Bot"], check=True)
+
+        subprocess.run(["git","add","."], check=True)
+
+        subprocess.run(["git","commit","-m","Atlas automated project build"], check=True)
+
+        subprocess.run(["git","branch","-M","main"], check=True)
+
+        subprocess.run(["git","remote","remove","origin"], stderr=subprocess.DEVNULL)
+
+        subprocess.run(["git","remote","add","origin",repo_url], check=True)
+
+        subprocess.run(["git","push","-u","origin","main"], check=True)
+
+        return True
+
+    except Exception as e:
+
+        print("GitHub push failed:", e)
+        return False
 
 # -----------------------------
 # BUILD PIPELINE
@@ -296,29 +306,28 @@ async def build(ctx, project_type: str):
 
     await asyncio.sleep(2)
 
-    try:
-        push_to_github()
+    success = push_to_github()
 
-        if updates:
+    if success and updates:
 
-            embed = discord.Embed(
-                title="📦 Project Generated",
-                description=f"Type: **{project_type}**",
-                color=discord.Color.green()
-            )
+        embed = discord.Embed(
+            title="📦 Project Generated",
+            description=f"Type: **{project_type}**",
+            color=discord.Color.green()
+        )
 
-            embed.add_field(name="Repository", value=GITHUB_REPO)
-            embed.add_field(name="Builder", value="Atlas Developer Agent")
+        embed.add_field(name="Repository", value=GITHUB_REPO)
+        embed.add_field(name="Builder", value="Atlas Developer Agent")
 
-            await updates.send(embed=embed)
+        await updates.send(embed=embed)
 
-    except Exception as e:
-        print(e)
+    if not success:
+        await ctx.send("⚠️ GitHub push failed. Check Railway logs.")
 
     if pm:
         await pm.send("✅ Build pipeline completed")
 
-    await ctx.send("🚀 Project created and pushed to GitHub")
+    await ctx.send("🚀 Project build pipeline finished")
 
 # -----------------------------
 # OPERATIONS
