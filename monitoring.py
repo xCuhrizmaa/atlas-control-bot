@@ -2,6 +2,12 @@ import requests
 import discord
 from discord.ext import tasks
 
+# -----------------------------
+
+# API CHECK
+
+# -----------------------------
+
 def check_api():
 
 ```
@@ -17,6 +23,12 @@ except:
     return "🔴 Offline", False
 ```
 
+# -----------------------------
+
+# SERVICE MONITOR LOOP
+
+# -----------------------------
+
 def monitor_services():
 
 ```
@@ -29,6 +41,7 @@ async def monitor(bot):
 
         for guild in bot.guilds:
             for channel in guild.text_channels:
+
                 if channel.name == "errors":
 
                     embed = discord.Embed(
