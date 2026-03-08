@@ -15,7 +15,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "1.3.0"
+BOT_VERSION = "1.4.0"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -41,6 +41,25 @@ async def on_ready():
     print(f"Atlas Control connected as {bot.user}")
 
     monitor_services.start()
+
+    # Restart alert
+    for guild in bot.guilds:
+        for channel in guild.text_channels:
+            if channel.name == "errors":
+
+                embed = discord.Embed(
+                    title="⚠️ Atlas Restart Detected",
+                    description=f"Atlas Control v{BOT_VERSION} started",
+                    color=discord.Color.orange()
+                )
+
+                embed.add_field(
+                    name="Notice",
+                    value="Possible crash or deployment restart",
+                    inline=False
+                )
+
+                await channel.send(embed=embed)
 
 # -----------------------------
 # SERVICE CHECK FUNCTIONS
@@ -317,7 +336,7 @@ async def monitor_services():
                 if not api_ok and last_api_state:
 
                     embed = discord.Embed(
-                        title="⚠️ SERVICE ALERT",
+                        title="🚨 SERVICE ALERT",
                         description="Store API is OFFLINE",
                         color=discord.Color.red()
                     )
