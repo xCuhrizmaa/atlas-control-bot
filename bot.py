@@ -14,7 +14,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("Token loaded successfully")
 
-BOT_VERSION = "1.1.0"
+BOT_VERSION = "1.1.1"
 START_TIME = datetime.utcnow()
 
 last_api_state = True
@@ -37,7 +37,6 @@ async def on_ready():
 
     monitor_services.start()
 
-    # Deployment notification
     for guild in bot.guilds:
         for channel in guild.text_channels:
             if channel.name == "deployments":
@@ -51,7 +50,6 @@ async def on_ready():
                 embed.set_footer(text="Atlas Deployment Monitor")
 
                 await channel.send(embed=embed)
-
 
 # -----------------------------
 # SERVICE CHECK FUNCTIONS
@@ -210,6 +208,66 @@ async def railway(ctx):
 
 
 # -----------------------------
+# COMMAND LIST / HELP
+# -----------------------------
+@bot.command(name="commands")
+@bot.command(name="help")
+async def command_list(ctx):
+
+    embed = discord.Embed(
+        title="📜 Atlas Control Commands",
+        description="Available commands in Atlas Dev Lab",
+        color=discord.Color.purple()
+    )
+
+    embed.add_field(
+        name="Monitoring",
+        value="""
+!status
+!uptime
+!latency
+!version
+!railway
+""",
+        inline=False
+    )
+
+    embed.add_field(
+        name="AI Agents",
+        value="""
+!agents
+!architect
+!dev
+!qa
+!security
+""",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Operations",
+        value="""
+!deploy
+!logs
+""",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Utility",
+        value="""
+!commands
+!help
+""",
+        inline=False
+    )
+
+    embed.set_footer(text="Atlas Dev Lab Command Center")
+
+    await ctx.send(embed=embed)
+
+
+# -----------------------------
 # AUTOMATIC MONITORING
 # -----------------------------
 @tasks.loop(minutes=5)
@@ -224,7 +282,6 @@ async def monitor_services():
 
             if channel.name == "errors":
 
-                # API went offline
                 if not api_ok and last_api_state:
 
                     embed = discord.Embed(
@@ -237,7 +294,6 @@ async def monitor_services():
 
                     await channel.send(embed=embed)
 
-                # API recovered
                 if api_ok and not last_api_state:
 
                     embed = discord.Embed(
