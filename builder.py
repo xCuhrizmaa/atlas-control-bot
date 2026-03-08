@@ -46,16 +46,24 @@ async def run_build_pipeline(bot, ctx, project_type):
         await dev.send("👨‍💻 Generating project code...")
 
     repo_name, version = create_or_update_repo(project_type)
+except Exception as e:
+    print(f"GitHub error: {e}")
+    repo_name = "repo-creation-failed"
+    version = "unknown"
 
     await asyncio.sleep(1)
 
     # QA
     if qa:
         await qa.send("🧪 Running automated tests...")
+except Exception as e:
+    print(f"QA error: {e}")
 
     # Security
     if security:
         await security.send("🔐 Running security scan...")
+except Exception as e:
+    print(f"Security error: {e}")
 
     # Project updates
     if updates:
