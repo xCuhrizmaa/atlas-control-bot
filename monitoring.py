@@ -2,18 +2,11 @@ import requests
 import discord
 from discord.ext import tasks
 
-# -----------------------------
-
-# API CHECK
-
-# -----------------------------
-
 def check_api():
+try:
+response = requests.get("https://google.com", timeout=3)
 
 ```
-try:
-    response = requests.get("https://google.com", timeout=3)
-
     if response.status_code == 200:
         return "🟢 Online", True
 
@@ -22,12 +15,6 @@ try:
 except:
     return "🔴 Offline", False
 ```
-
-# -----------------------------
-
-# SERVICE MONITOR LOOP
-
-# -----------------------------
 
 def monitor_services():
 
