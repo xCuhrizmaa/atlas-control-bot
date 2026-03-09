@@ -1,9 +1,7 @@
-py_full"}
 import os
 from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 
 def interpret_project(project_request):
 
@@ -15,7 +13,7 @@ User request:
 
 Design a modern production architecture.
 
-Prefer modern stacks such as:
+Prefer modern stacks like:
 Next.js
 Supabase
 Stripe
