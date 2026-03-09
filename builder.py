@@ -38,6 +38,10 @@ async def run_build_pipeline(bot, ctx, project_type):
 
     # Architecture plan
         architecture = interpret_project(project_type)
+        
+        # Discord message limit
+        architecture = architecture[:1900]
+
     if plans:
         await plans.send(architecture)
     
