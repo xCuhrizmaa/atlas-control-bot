@@ -4,7 +4,9 @@ from github_tools import create_or_update_repo
 from atlas_brain import interpret_project
 
 
+# -----------------------------
 # DISCORD MESSAGE SPLITTER
+# -----------------------------
 async def send_split_message(channel, text):
 
     limit = 1900
@@ -13,18 +15,9 @@ async def send_split_message(channel, text):
         await channel.send(text[i:i+limit])
 
 
-def generate_architecture(project_type):
-    architecture = (
-        "Architecture Plan\n\n"
-        f"Project: {project_type}\n\n"
-        "Backend: FastAPI\n"
-        "Frontend: React\n"
-        "Mobile: React Native\n"
-        "Database: PostgreSQL\n"
-    )
-    return architecture
-
-
+# -----------------------------
+# BUILD PIPELINE
+# -----------------------------
 async def run_build_pipeline(bot, ctx, project_type):
 
     guild = ctx.guild
@@ -42,15 +35,14 @@ async def run_build_pipeline(bot, ctx, project_type):
         await pm.send("📋 Build request received: " + project_type)
 
     # Architect
-	if architect:
- 	   await architect.send("🧠 Designing architecture...")
+    if architect:
+        await architect.send("🧠 Designing architecture...")
 
-	# Architecture plan
-	architecture = interpret_project(project_type)
+    # Architecture Plan
+    architecture = interpret_project(project_type)
 
-	if plans:
- 	   await send_split_message(plans, architecture)
-    
+    if plans:
+        await send_split_message(plans, architecture)
 
     await asyncio.sleep(1)
 
@@ -70,8 +62,9 @@ async def run_build_pipeline(bot, ctx, project_type):
     if security:
         await security.send("🔐 Running security scan...")
 
-    # Project update
+    # Project Update
     if updates:
+
         embed = discord.Embed(
             title="📦 Project Generated",
             color=discord.Color.green()
