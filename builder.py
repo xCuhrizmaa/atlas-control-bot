@@ -4,6 +4,15 @@ from github_tools import create_or_update_repo
 from atlas_brain import interpret_project
 
 
+# DISCORD MESSAGE SPLITTER
+async def send_split_message(channel, text):
+
+    limit = 1900
+
+    for i in range(0, len(text), limit):
+        await channel.send(text[i:i+limit])
+
+
 def generate_architecture(project_type):
     architecture = (
         "Architecture Plan\n\n"
