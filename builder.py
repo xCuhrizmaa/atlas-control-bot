@@ -42,17 +42,14 @@ async def run_build_pipeline(bot, ctx, project_type):
         await pm.send("📋 Build request received: " + project_type)
 
     # Architect
-    if architect:
-        await architect.send("🧠 Designing architecture...")
+	if architect:
+ 	   await architect.send("🧠 Designing architecture...")
 
-    # Architecture plan
-        architecture = interpret_project(project_type)
-        
-        # Discord message limit
-        architecture = architecture[:1900]
+	# Architecture plan
+	architecture = interpret_project(project_type)
 
-    if plans:
-        await send_split_message(plans, architecture)
+	if plans:
+ 	   await send_split_message(plans, architecture)
     
 
     await asyncio.sleep(1)
