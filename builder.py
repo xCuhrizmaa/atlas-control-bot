@@ -43,7 +43,7 @@ async def run_build_pipeline(bot, ctx, project_type):
         architecture = architecture[:1900]
 
     if plans:
-        await plans.send(architecture)
+        await send_split_message(plans, architecture)
     
 
     await asyncio.sleep(1)
