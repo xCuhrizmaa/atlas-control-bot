@@ -3,35 +3,43 @@ from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def interpret_project(project_request):
+
+def interpret_project(project_type):
 
     prompt = f"""
-You are a senior software architect.
+You are an expert software architect.
 
-User request:
-{project_request}
+Convert the following project idea into a structured JSON format.
 
-Design a modern production architecture.
+Project:
+{project_type}
 
-Prefer modern stacks like:
-Next.js
-Supabase
-Stripe
-Vercel
+Return ONLY valid JSON. No explanation.
 
-Return:
-
-Architecture Plan
-Backend
-Frontend
-Database
-Hosting
-Key Features
+Format:
+{{
+  "name": "project-name",
+  "frontend": [
+    {{"path": "frontend/pages/index.js", "description": "homepage UI"}},
+    {{"path": "frontend/components/Navbar.js", "description": "navigation bar"}}
+  ],
+  "backend": [
+    {{"path": "backend/api/app.js", "description": "main API"}},
+    {{"path": "backend/api/orders.js", "description": "orders endpoint"}}
+  ],
+  "database": [
+    {{"path": "database/schema.sql", "description": "database schema"}}
+  ]
+}}
 """
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
+        model="gpt-5-mini",
+        messages=[
+            {"role": "system", "content": "You are a software architect."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3
     )
 
     return response.choices[0].message.content
