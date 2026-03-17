@@ -1,45 +1,40 @@
-import os
-from openai import OpenAI
+import discord
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+async def agents_status(ctx):
 
-
-def interpret_project(project_type):
-
-    prompt = f"""
-You are an expert software architect.
-
-Convert the following project idea into a structured JSON format.
-
-Project:
-{project_type}
-
-Return ONLY valid JSON. No explanation.
-
-Format:
-{{
-  "name": "project-name",
-  "frontend": [
-    {{"path": "frontend/pages/index.js", "description": "homepage UI"}},
-    {{"path": "frontend/components/Navbar.js", "description": "navigation bar"}}
-  ],
-  "backend": [
-    {{"path": "backend/api/app.js", "description": "main API"}},
-    {{"path": "backend/api/orders.js", "description": "orders endpoint"}}
-  ],
-  "database": [
-    {{"path": "database/schema.sql", "description": "database schema"}}
-  ]
-}}
-"""
-
-    response = client.chat.completions.create(
-        model="gpt-5-mini",
-        messages=[
-            {"role": "system", "content": "You are a software architect."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3
+    embed = discord.Embed(
+        title="🤖 AI Agents Online",
+        color=discord.Color.green()
     )
 
-    return response.choices[0].message.content
+    embed.add_field(
+        name="Project Manager",
+        value="Coordinating builds",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Architect Agent",
+        value="Designing systems",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Developer Agent",
+        value="Writing code",
+        inline=False
+    )
+
+    embed.add_field(
+        name="QA Agent",
+        value="Running tests",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Security Agent",
+        value="Scanning vulnerabilities",
+        inline=False
+    )
+
+    await ctx.send(embed=embed)
