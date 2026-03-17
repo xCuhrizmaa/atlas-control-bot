@@ -63,7 +63,7 @@ def create_file(repo_name, path, content):
     requests.put(url, json=data, headers=headers)
 
 
-def create_or_update_repo(project_type):
+def create_or_update_repo(project_type, files):
 
     repo_name = slugify_project(project_type)
 
