@@ -66,7 +66,7 @@ def create_file(repo_name, path, content):
 
 def create_or_update_repo(project_type, files):
 
-    repo_name = f"{slugify_project(project_type)}-{int(time.time())}
+    repo_name = f"{slugify_project(project_type)}-{int(time.time())}"
 
     create_repo(repo_name)
 
