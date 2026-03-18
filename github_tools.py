@@ -58,15 +58,18 @@ def create_file(repo_name, path, content):
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
     data = {
-        "message": "Atlas automated project build",
+        "message": f"Adding {path}",
         "content": base64.b64encode(content.encode()).decode()  # ✅ FIXED
     }
 
     response = requests.put(url, json=data, headers=headers)
 
-    # ✅ Debug output (helps confirm it's working)
-    print(f"{path} → {response.status_code}")
-    print(response.text)
+    # ✅ FULL DEBUG OUTPUT
+    print("\n====================")
+    print(f"FILE: {path}")
+    print(f"STATUS: {response.status_code}")
+    print(f"RESPONSE: {response.text}")
+    print("====================\n")
 
 
 def create_or_update_repo(project_type, files):
@@ -74,7 +77,8 @@ def create_or_update_repo(project_type, files):
     repo_name = f"{slugify_project(project_type)}-{int(time.time())}"
 
     create_repo(repo_name)
-    time.sleep(3)
+
+    time.sleep(3)  # ✅ WAIT for GitHub repo to be ready
 
     version = "v1"
 
