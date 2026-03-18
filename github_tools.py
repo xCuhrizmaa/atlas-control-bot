@@ -2,6 +2,7 @@ import os
 import requests
 import re
 import time
+import base64
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
