@@ -74,6 +74,7 @@ def create_or_update_repo(project_type, files):
     repo_name = f"{slugify_project(project_type)}-{int(time.time())}"
 
     create_repo(repo_name)
+    time.sleep(3)
 
     version = "v1"
 
