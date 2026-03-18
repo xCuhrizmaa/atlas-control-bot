@@ -59,10 +59,14 @@ def create_file(repo_name, path, content):
 
     data = {
         "message": "Atlas automated project build",
-        "content": content.encode("utf-8").hex()
+        "content": base64.b64encode(content.encode()).decode()  # ✅ FIXED
     }
 
-    requests.put(url, json=data, headers=headers)
+    response = requests.put(url, json=data, headers=headers)
+
+    # ✅ Debug output (helps confirm it's working)
+    print(f"{path} → {response.status_code}")
+    print(response.text)
 
 
 def create_or_update_repo(project_type, files):
