@@ -3,7 +3,7 @@ import asyncio
 import json
 
 from github_tools import create_or_update_repo
-from atlas_brain import interpret_project, interpret_project
+from atlas_brain import interpret_project
 
 
 # -----------------------------
@@ -89,7 +89,8 @@ async def run_build_pipeline(bot, ctx, project_type):
     if dev:
         await dev.send("👨‍💻 Generating real project files...")
 
-    files = generate_files_from_json(project_type)
+    # ✅ FIXED LINE (THIS WAS THE BUG)
+    files = generate_files_from_json(project_json)
 
     repo_name, version = create_or_update_repo(project_type, files)
 
