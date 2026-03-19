@@ -55,8 +55,8 @@ def create_repo(repo_name):
 
 def create_file(repo_name, path, content):
 
-    # ✅ Flatten nested folders (safe for GitHub API)
-    path = path.lstrip("/")
+    # ✅ FINAL FIX: clean invalid characters for GitHub API
+    path = path.lstrip("/").replace("[", "").replace("]", "")
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
@@ -66,7 +66,7 @@ def create_file(repo_name, path, content):
     data = {
         "message": f"Adding {path}",
         "content": encoded_content,
-        "branch": "main"  # 🔥 FINAL FIX
+        "branch": "main"
     }
 
     response = requests.put(url, json=data, headers=headers)
