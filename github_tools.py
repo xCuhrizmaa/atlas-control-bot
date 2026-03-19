@@ -55,16 +55,22 @@ def create_repo(repo_name):
 
 def create_file(repo_name, path, content):
 
+    # ✅ FIX 1: clean path (prevents GitHub 404 issues)
+    path = path.lstrip("/")
+
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
+
+    # ✅ FIX 2: proper base64 encoding (required by GitHub)
+    encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
 
     data = {
         "message": f"Adding {path}",
-        "content": base64.b64encode(content.encode()).decode()  # ✅ FIXED
+        "content": encoded_content
     }
 
     response = requests.put(url, json=data, headers=headers)
 
-    # ✅ FULL DEBUG OUTPUT
+    # ✅ DEBUG LOGGING (keep this — very useful)
     print("\n====================")
     print(f"FILE: {path}")
     print(f"STATUS: {response.status_code}")
@@ -78,11 +84,15 @@ def create_or_update_repo(project_type, files):
 
     create_repo(repo_name)
 
-    time.sleep(3)  # ✅ WAIT for GitHub repo to be ready
+    # ✅ FIX 3: wait for GitHub repo to be ready
+    time.sleep(3)
 
     version = "v1"
 
     for path, content in files.items():
         create_file(repo_name, path, content)
+
+        # ✅ FIX 4: slight delay between file uploads (prevents 404/rate issues)
+        time.sleep(0.5)
 
     return repo_name, version
