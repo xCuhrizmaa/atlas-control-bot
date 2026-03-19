@@ -27,7 +27,7 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
-# 🔥 FIXED: FORCE BRANCH CREATION
+# 🔥 FORCE BRANCH CREATION
 def create_repo(repo_name):
 
     url = "https://api.github.com/user/repos"
@@ -35,8 +35,8 @@ def create_repo(repo_name):
     data = {
         "name": repo_name,
         "private": False,
-        "auto_init": True,        # ✅ creates README + main branch instantly
-        "default_branch": "main"  # ✅ ensures correct branch
+        "auto_init": True,
+        "default_branch": "main"
     }
 
     r = requests.post(url, json=data, headers=headers)
@@ -49,9 +49,24 @@ def create_repo(repo_name):
         print("Repo creation error:", r.text)
 
 
+# 🔥 NEW: WAIT UNTIL GITHUB IS READY
+def wait_for_repo(repo_name):
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
+
+    for _ in range(10):
+        r = requests.get(url, headers=headers)
+
+        if r.status_code == 200:
+            print("Repo is ready ✅")
+            return
+
+        print("Waiting for repo...")
+        time.sleep(1)
+
+
 def create_file(repo_name, path, content):
 
-    # ✅ flatten + sanitize (this works reliably)
+    # flatten + sanitize
     path = path.lstrip("/").replace("/", "_").replace("[", "").replace("]", "")
 
     safe_path = quote(path)
@@ -81,13 +96,12 @@ def create_or_update_repo(project_type, files):
 
     create_repo(repo_name)
 
-    time.sleep(2)  # slightly shorter now that auto_init is used
+    # 🔥 CRITICAL FIX
+    wait_for_repo(repo_name)
 
     version = "v1"
 
     sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
-
-    # ❌ REMOVED manual README (GitHub already created it)
 
     for path, content in sorted_files.items():
         create_file(repo_name, path, content)
