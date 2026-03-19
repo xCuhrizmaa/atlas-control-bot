@@ -55,8 +55,8 @@ def create_repo(repo_name):
 
 def create_file(repo_name, path, content):
 
-    # ✅ FIX 1: clean path (prevents GitHub 404 issues)
-    path = path.lstrip("/")
+    # ✅ Fltten nested folders to safe Github paths
+    path = path.lstrip("/").replace("/", "_")
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
