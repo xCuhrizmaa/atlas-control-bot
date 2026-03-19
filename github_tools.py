@@ -3,6 +3,7 @@ import requests
 import re
 import time
 import base64
+from urllib.parse import quote  # ✅ NEW
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
@@ -16,14 +17,10 @@ headers = {
 def slugify_project(project_type):
     """
     Convert project request into safe repo name
-    Example:
-    'cookie ordering app with payments'
-    -> atlas-cookie-ordering-app
     """
 
     cleaned = project_type.lower()
 
-    # remove filler words
     cleaned = cleaned.replace("with payments", "")
     cleaned = cleaned.replace("app", "")
     cleaned = cleaned.replace("application", "")
@@ -55,12 +52,14 @@ def create_repo(repo_name):
 
 def create_file(repo_name, path, content):
 
-    # ✅ FINAL FIX: clean invalid characters for GitHub API
+    # ✅ clean invalid characters
     path = path.lstrip("/").replace("[", "").replace("]", "")
 
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
+    # 🔥 FINAL FIX: URL encode path
+    safe_path = quote(path)
 
-    # ✅ Proper base64 encoding
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{safe_path}"
+
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
 
     data = {
@@ -84,19 +83,16 @@ def create_or_update_repo(project_type, files):
 
     create_repo(repo_name)
 
-    # ✅ wait for repo to be ready
     time.sleep(3)
 
     version = "v1"
 
-    # ✅ sort files (good practice)
     sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
 
-    # 🔥 ALWAYS create README (ensures branch exists)
+    # 🔥 ensure branch exists
     create_file(repo_name, "README.md", "# Atlas Project\n\nAuto-generated\n")
     time.sleep(1)
 
-    # ✅ upload remaining files
     for path, content in sorted_files.items():
         if path == "README.md":
             continue
