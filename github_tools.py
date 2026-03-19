@@ -65,7 +65,8 @@ def create_file(repo_name, path, content):
 
     data = {
         "message": f"Adding {path}",
-        "content": encoded_content
+        "content": encoded_content,
+        "branch": "main"  # 🔥 FINAL FIX
     }
 
     response = requests.put(url, json=data, headers=headers)
@@ -91,7 +92,7 @@ def create_or_update_repo(project_type, files):
     # ✅ sort files (good practice)
     sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
 
-    # 🔥 FIXED: ALWAYS create README (ensures branch exists)
+    # 🔥 ALWAYS create README (ensures branch exists)
     create_file(repo_name, "README.md", "# Atlas Project\n\nAuto-generated\n")
     time.sleep(1)
 
