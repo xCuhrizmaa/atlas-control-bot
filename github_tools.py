@@ -53,7 +53,7 @@ def create_repo(repo_name):
 def create_file(repo_name, path, content):
 
     # ✅ clean invalid characters
-    path = path.lstrip("/").replace("[", "").replace("]", "")
+    path = path.lstrip("/").replace("/", "_").replace("[", "").replace("]", "")
 
     # 🔥 FINAL FIX: URL encode path
     safe_path = quote(path)
