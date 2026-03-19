@@ -56,7 +56,7 @@ def create_repo(repo_name):
 def create_file(repo_name, path, content):
 
     # ✅ Flatten nested folders (safe for GitHub API)
-    path = path.lstrip("/").replace("/", "_")
+    path = path.lstrip("/")
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
