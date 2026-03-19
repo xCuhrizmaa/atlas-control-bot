@@ -91,10 +91,9 @@ def create_or_update_repo(project_type, files):
     # ✅ sort files (good practice)
     sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
 
-    # 🔥 CRITICAL FIX: create README FIRST (creates main branch)
-    if "README.md" in sorted_files:
-        create_file(repo_name, "README.md", sorted_files["README.md"])
-        time.sleep(1)
+    # 🔥 FIXED: ALWAYS create README (ensures branch exists)
+    create_file(repo_name, "README.md", "# Atlas Project\n\nAuto-generated\n")
+    time.sleep(1)
 
     # ✅ upload remaining files
     for path, content in sorted_files.items():
