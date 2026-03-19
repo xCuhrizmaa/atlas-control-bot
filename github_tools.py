@@ -3,7 +3,7 @@ import requests
 import re
 import time
 import base64
-from urllib.parse import quote  # ✅ NEW
+from urllib.parse import quote
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
@@ -15,10 +15,6 @@ headers = {
 
 
 def slugify_project(project_type):
-    """
-    Convert project request into safe repo name
-    """
-
     cleaned = project_type.lower()
 
     cleaned = cleaned.replace("with payments", "")
@@ -31,13 +27,16 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
+# 🔥 FIXED: FORCE BRANCH CREATION
 def create_repo(repo_name):
 
     url = "https://api.github.com/user/repos"
 
     data = {
         "name": repo_name,
-        "private": False
+        "private": False,
+        "auto_init": True,        # ✅ creates README + main branch instantly
+        "default_branch": "main"  # ✅ ensures correct branch
     }
 
     r = requests.post(url, json=data, headers=headers)
@@ -52,10 +51,9 @@ def create_repo(repo_name):
 
 def create_file(repo_name, path, content):
 
-    # ✅ clean invalid characters
+    # ✅ flatten + sanitize (this works reliably)
     path = path.lstrip("/").replace("/", "_").replace("[", "").replace("]", "")
 
-    # 🔥 FINAL FIX: URL encode path
     safe_path = quote(path)
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{safe_path}"
@@ -83,20 +81,15 @@ def create_or_update_repo(project_type, files):
 
     create_repo(repo_name)
 
-    time.sleep(3)
+    time.sleep(2)  # slightly shorter now that auto_init is used
 
     version = "v1"
 
     sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
 
-    # 🔥 ensure branch exists
-    create_file(repo_name, "README.md", "# Atlas Project\n\nAuto-generated\n")
-    time.sleep(1)
+    # ❌ REMOVED manual README (GitHub already created it)
 
     for path, content in sorted_files.items():
-        if path == "README.md":
-            continue
-
         create_file(repo_name, path, content)
         time.sleep(0.5)
 
