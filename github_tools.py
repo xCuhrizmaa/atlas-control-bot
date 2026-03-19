@@ -55,12 +55,12 @@ def create_repo(repo_name):
 
 def create_file(repo_name, path, content):
 
-    # ✅ Fltten nested folders to safe Github paths
+    # ✅ Flatten nested folders (safe for GitHub API)
     path = path.lstrip("/").replace("/", "_")
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
-    # ✅ FIX 2: proper base64 encoding (required by GitHub)
+    # ✅ Proper base64 encoding
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
 
     data = {
@@ -70,7 +70,6 @@ def create_file(repo_name, path, content):
 
     response = requests.put(url, json=data, headers=headers)
 
-    # ✅ DEBUG LOGGING (keep this — very useful)
     print("\n====================")
     print(f"FILE: {path}")
     print(f"STATUS: {response.status_code}")
@@ -84,18 +83,25 @@ def create_or_update_repo(project_type, files):
 
     create_repo(repo_name)
 
-    # ✅ FIX 3: wait for GitHub repo to be ready
+    # ✅ wait for repo to be ready
     time.sleep(3)
 
     version = "v1"
 
-    # ✅ FINAL FIX: sort files by depth (prevents 404 on nested folders)
+    # ✅ sort files (good practice)
     sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
 
-    for path, content in sorted_files.items():
-        create_file(repo_name, path, content)
+    # 🔥 CRITICAL FIX: create README FIRST (creates main branch)
+    if "README.md" in sorted_files:
+        create_file(repo_name, "README.md", sorted_files["README.md"])
+        time.sleep(1)
 
-        # ✅ FIX 4: slight delay between file uploads
+    # ✅ upload remaining files
+    for path, content in sorted_files.items():
+        if path == "README.md":
+            continue
+
+        create_file(repo_name, path, content)
         time.sleep(0.5)
 
     return repo_name, version
