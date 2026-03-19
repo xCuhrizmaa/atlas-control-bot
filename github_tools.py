@@ -89,10 +89,13 @@ def create_or_update_repo(project_type, files):
 
     version = "v1"
 
-    for path, content in files.items():
+    # ✅ FINAL FIX: sort files by depth (prevents 404 on nested folders)
+    sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
+
+    for path, content in sorted_files.items():
         create_file(repo_name, path, content)
 
-        # ✅ FIX 4: slight delay between file uploads (prevents 404/rate issues)
+        # ✅ FIX 4: slight delay between file uploads
         time.sleep(0.5)
 
     return repo_name, version
