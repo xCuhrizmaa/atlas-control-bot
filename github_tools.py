@@ -3,7 +3,6 @@ import requests
 import re
 import time
 import base64
-from urllib.parse import quote
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
@@ -27,7 +26,7 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
-# 🔥 FORCE BRANCH CREATION
+# ✅ CREATE REPO (auto creates main branch + README)
 def create_repo(repo_name):
 
     url = "https://api.github.com/user/repos"
@@ -35,8 +34,7 @@ def create_repo(repo_name):
     data = {
         "name": repo_name,
         "private": False,
-        "auto_init": True,
-        "default_branch": "main"
+        "auto_init": True  # 🔥 ensures repo is immediately usable
     }
 
     r = requests.post(url, json=data, headers=headers)
@@ -49,7 +47,7 @@ def create_repo(repo_name):
         print("Repo creation error:", r.text)
 
 
-# 🔥 NEW: WAIT UNTIL GITHUB IS READY
+# ✅ WAIT UNTIL REPO IS FULLY READY
 def wait_for_repo(repo_name):
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
 
@@ -64,21 +62,20 @@ def wait_for_repo(repo_name):
         time.sleep(1)
 
 
+# ✅ CREATE FILE (FINAL FIXED VERSION)
 def create_file(repo_name, path, content):
 
-    # flatten + sanitize
-    path = path.lstrip("/").replace("/", "_").replace("[", "").replace("]", "")
+    # ✅ KEEP REAL FOLDER STRUCTURE (no flattening)
+    path = path.lstrip("/")
 
-    safe_path = quote(path)
-
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{safe_path}"
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
     encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
 
     data = {
         "message": f"Adding {path}",
-        "content": encoded_content,
-        "branch": "main"
+        "content": encoded_content
+        # ❌ DO NOT SET BRANCH
     }
 
     response = requests.put(url, json=data, headers=headers)
@@ -96,8 +93,10 @@ def create_or_update_repo(project_type, files):
 
     create_repo(repo_name)
 
-    # 🔥 CRITICAL FIX
     wait_for_repo(repo_name)
+
+    # 🔥 EXTRA SAFETY DELAY (important)
+    time.sleep(2)
 
     version = "v1"
 
