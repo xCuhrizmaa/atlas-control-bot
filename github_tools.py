@@ -62,11 +62,16 @@ def wait_for_repo(repo_name):
         time.sleep(1)
 
 
-# ✅ CREATE FILE (🔥 FINAL FIX APPLIED HERE)
+# ✅ CREATE FILE (🔥 FINAL STABLE VERSION)
 def create_file(repo_name, path, content):
 
-    # 🔥 FIX: remove ONLY brackets (GitHub API can't handle them)
-    path = path.lstrip("/").replace("[", "").replace("]", "")
+    # 🔥 FINAL FIX: flatten folders + remove brackets
+    path = (
+        path.lstrip("/")
+        .replace("/", "_")
+        .replace("[", "")
+        .replace("]", "")
+    )
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
