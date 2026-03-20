@@ -49,9 +49,22 @@ def create_repo_with_files(repo_name, files):
 
     repo_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
 
-    # 2. Get default branch
-    repo_data = requests.get(repo_url, headers=headers).json()
-    default_branch = repo_data["default_branch"]
+    # 🔥 FIX: WAIT FOR default_branch TO EXIST
+    default_branch = None
+
+    for _ in range(10):
+        repo_data = requests.get(repo_url, headers=headers).json()
+
+        if "default_branch" in repo_data:
+            default_branch = repo_data["default_branch"]
+            print("Default branch:", default_branch)
+            break
+
+        print("Waiting for default branch...")
+        time.sleep(1)
+
+    if not default_branch:
+        raise Exception("Default branch not found after waiting")
 
     # 3. Get latest commit
     ref_data = requests.get(f"{repo_url}/git/ref/heads/{default_branch}", headers=headers).json()
