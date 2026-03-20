@@ -34,7 +34,7 @@ def create_repo(repo_name):
     data = {
         "name": repo_name,
         "private": False,
-        "auto_init": True  # 🔥 ensures repo is immediately usable
+        "auto_init": True
     }
 
     r = requests.post(url, json=data, headers=headers)
@@ -62,11 +62,11 @@ def wait_for_repo(repo_name):
         time.sleep(1)
 
 
-# ✅ CREATE FILE (FINAL FIXED VERSION)
+# ✅ CREATE FILE (🔥 FINAL FIX APPLIED HERE)
 def create_file(repo_name, path, content):
 
-    # ✅ KEEP REAL FOLDER STRUCTURE (no flattening)
-    path = path.lstrip("/")
+    # 🔥 FIX: remove ONLY brackets (GitHub API can't handle them)
+    path = path.lstrip("/").replace("[", "").replace("]", "")
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
@@ -75,7 +75,6 @@ def create_file(repo_name, path, content):
     data = {
         "message": f"Adding {path}",
         "content": encoded_content
-        # ❌ DO NOT SET BRANCH
     }
 
     response = requests.put(url, json=data, headers=headers)
@@ -95,7 +94,7 @@ def create_or_update_repo(project_type, files):
 
     wait_for_repo(repo_name)
 
-    # 🔥 EXTRA SAFETY DELAY (important)
+    # 🔥 EXTRA SAFETY DELAY
     time.sleep(2)
 
     version = "v1"
