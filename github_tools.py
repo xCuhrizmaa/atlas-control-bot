@@ -47,8 +47,29 @@ def create_repo_with_files(repo_name, files):
 
     print("Repo created ✅")
 
-    # 🔥 WAIT FOR INITIAL COMMIT
-    default_branch = "main"
+    # ----------------------------------
+    # 🔥 STEP 1: GET DEFAULT BRANCH
+    # ----------------------------------
+    default_branch = None
+
+    for _ in range(10):
+        repo_data = requests.get(repo_url, headers=headers).json()
+
+        if "default_branch" in repo_data:
+            default_branch = repo_data["default_branch"]
+            print("Default branch:", default_branch)
+            break
+
+        print("Waiting for default branch...")
+        time.sleep(1)
+
+    if not default_branch:
+        print("Failed to get default branch")
+        return
+
+    # ----------------------------------
+    # 🔥 STEP 2: WAIT FOR INITIAL COMMIT
+    # ----------------------------------
     latest_commit_sha = None
 
     for _ in range(10):
@@ -69,7 +90,9 @@ def create_repo_with_files(repo_name, files):
         print("Failed to find initial commit")
         return
 
-    # 🔥 GET BASE TREE SHA
+    # ----------------------------------
+    # 🔥 STEP 3: GET BASE TREE
+    # ----------------------------------
     commit_data = requests.get(
         f"{repo_url}/git/commits/{latest_commit_sha}",
         headers=headers
@@ -77,7 +100,9 @@ def create_repo_with_files(repo_name, files):
 
     base_tree_sha = commit_data["tree"]["sha"]
 
-    # 2. Build tree (ALL FILES)
+    # ----------------------------------
+    # 🔥 STEP 4: BUILD TREE
+    # ----------------------------------
     tree = []
 
     for path, content in files.items():
@@ -93,7 +118,7 @@ def create_repo_with_files(repo_name, files):
     tree_response = requests.post(
         f"{repo_url}/git/trees",
         json={
-            "base_tree": base_tree_sha,  # 🔥 KEY FIX
+            "base_tree": base_tree_sha,
             "tree": tree
         },
         headers=headers
@@ -105,13 +130,15 @@ def create_repo_with_files(repo_name, files):
 
     new_tree_sha = tree_response["sha"]
 
-    # 3. Create commit (on top of initial commit)
+    # ----------------------------------
+    # 🔥 STEP 5: CREATE COMMIT
+    # ----------------------------------
     commit_response = requests.post(
         f"{repo_url}/git/commits",
         json={
             "message": "Atlas AI project build",
             "tree": new_tree_sha,
-            "parents": [latest_commit_sha]  # 🔥 KEY FIX
+            "parents": [latest_commit_sha]
         },
         headers=headers
     ).json()
@@ -122,7 +149,9 @@ def create_repo_with_files(repo_name, files):
 
     new_commit_sha = commit_response["sha"]
 
-    # 4. Update branch
+    # ----------------------------------
+    # 🔥 STEP 6: UPDATE BRANCH
+    # ----------------------------------
     update_response = requests.patch(
         f"{repo_url}/git/refs/heads/{default_branch}",
         json={"sha": new_commit_sha},
