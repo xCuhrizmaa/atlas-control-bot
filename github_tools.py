@@ -36,6 +36,7 @@ def create_repo_with_files(repo_name, files):
         json={
             "name": repo_name,
             "private": False
+             "auto_init": True  # 🔥 REQUIRED
         },
         headers=headers
     )
