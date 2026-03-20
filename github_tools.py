@@ -50,8 +50,13 @@ def create_repo(repo_name):
 # ✅ CREATE FILE (RELIABLE METHOD)
 def create_file(repo_name, path, content):
 
-    # clean path (important)
-    path = path.lstrip("/").replace("[", "").replace("]", "")
+    # 🔥 FINAL FIX: flatten + clean path
+    path = (
+        path.lstrip("/")
+        .replace("/", "_")      # ✅ flatten folders
+        .replace("[", "")
+        .replace("]", "")
+    )
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
 
