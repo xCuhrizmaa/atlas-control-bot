@@ -2,6 +2,7 @@ import os
 import requests
 import re
 import time
+import base64
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
@@ -25,12 +26,9 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
-# 🔥 FINAL: CREATE REPO + BUILD ON INITIAL COMMIT
-def create_repo_with_files(repo_name, files):
+# ✅ CREATE REPO (instant ready)
+def create_repo(repo_name):
 
-    repo_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
-
-    # 1. Create repo
     r = requests.post(
         "https://api.github.com/user/repos",
         json={
@@ -43,114 +41,54 @@ def create_repo_with_files(repo_name, files):
 
     if r.status_code not in [201, 422]:
         print("Repo creation failed:", r.text)
-        return
+        return False
 
     print("Repo created ✅")
-
-    # ----------------------------------
-    # 🔥 STEP 1: FORCE MAIN + WAIT LONGER
-    # ----------------------------------
-    default_branch = "main"
-    latest_commit_sha = None
-
-    for _ in range(20):  # ⬅️ more retries
-        ref_response = requests.get(
-            f"{repo_url}/git/ref/heads/{default_branch}",
-            headers=headers
-        )
-
-        if ref_response.status_code == 200:
-            latest_commit_sha = ref_response.json()["object"]["sha"]
-            print("Initial commit found ✅")
-            break
-
-        print("Waiting for initial commit...")
-        time.sleep(2)  # ⬅️ longer delay
-
-    if not latest_commit_sha:
-        print("❌ GitHub never initialized the branch properly")
-        return
-
-    # ----------------------------------
-    # 🔥 STEP 2: GET BASE TREE
-    # ----------------------------------
-    commit_data = requests.get(
-        f"{repo_url}/git/commits/{latest_commit_sha}",
-        headers=headers
-    ).json()
-
-    base_tree_sha = commit_data["tree"]["sha"]
-
-    # ----------------------------------
-    # 🔥 STEP 3: BUILD TREE
-    # ----------------------------------
-    tree = []
-
-    for path, content in files.items():
-        clean_path = path.replace("[", "").replace("]", "")
-
-        tree.append({
-            "path": clean_path,
-            "mode": "100644",
-            "type": "blob",
-            "content": content
-        })
-
-    tree_response = requests.post(
-        f"{repo_url}/git/trees",
-        json={
-            "base_tree": base_tree_sha,
-            "tree": tree
-        },
-        headers=headers
-    ).json()
-
-    if "sha" not in tree_response:
-        print("Tree creation failed:", tree_response)
-        return
-
-    new_tree_sha = tree_response["sha"]
-
-    # ----------------------------------
-    # 🔥 STEP 4: CREATE COMMIT
-    # ----------------------------------
-    commit_response = requests.post(
-        f"{repo_url}/git/commits",
-        json={
-            "message": "Atlas AI project build",
-            "tree": new_tree_sha,
-            "parents": [latest_commit_sha]
-        },
-        headers=headers
-    ).json()
-
-    if "sha" not in commit_response:
-        print("Commit failed:", commit_response)
-        return
-
-    new_commit_sha = commit_response["sha"]
-
-    # ----------------------------------
-    # 🔥 STEP 5: UPDATE BRANCH
-    # ----------------------------------
-    update_response = requests.patch(
-        f"{repo_url}/git/refs/heads/{default_branch}",
-        json={"sha": new_commit_sha},
-        headers=headers
-    )
-
-    if update_response.status_code != 200:
-        print("Branch update failed:", update_response.text)
-        return
-
-    print("🔥 ALL FILES SUCCESSFULLY PUSHED")
+    return True
 
 
-# ✅ MAIN FUNCTION
+# ✅ CREATE FILE (RELIABLE METHOD)
+def create_file(repo_name, path, content):
+
+    # clean path (important)
+    path = path.lstrip("/").replace("[", "").replace("]", "")
+
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
+
+    encoded = base64.b64encode(content.encode("utf-8")).decode("utf-8")
+
+    data = {
+        "message": f"Add {path}",
+        "content": encoded
+    }
+
+    r = requests.put(url, json=data, headers=headers)
+
+    print(f"{path} → {r.status_code}")
+
+    return r.status_code in [200, 201]
+
+
+# ✅ MAIN FUNCTION (NO TREE API ANYMORE)
 def create_or_update_repo(project_type, files):
 
     repo_name = f"{slugify_project(project_type)}-{int(time.time())}"
 
-    create_repo_with_files(repo_name, files)
+    if not create_repo(repo_name):
+        return repo_name, "failed"
+
+    time.sleep(2)  # allow repo to initialize
+
+    success_count = 0
+
+    for path, content in files.items():
+        ok = create_file(repo_name, path, content)
+
+        if ok:
+            success_count += 1
+
+        time.sleep(0.3)
+
+    print(f"✅ Uploaded {success_count}/{len(files)} files")
 
     return repo_name, "v1"
