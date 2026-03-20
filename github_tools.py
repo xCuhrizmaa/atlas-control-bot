@@ -26,7 +26,7 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
-# ✅ CREATE REPO (instant ready)
+# ✅ CREATE REPO
 def create_repo(repo_name):
 
     r = requests.post(
@@ -47,13 +47,40 @@ def create_repo(repo_name):
     return True
 
 
-# ✅ CREATE FILE (RELIABLE METHOD)
+# 🔥 NEW: WAIT UNTIL REPO IS FULLY READY (CRITICAL FIX)
+def wait_for_ready(repo_name):
+
+    repo_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
+
+    for _ in range(20):
+        repo_data = requests.get(repo_url, headers=headers).json()
+
+        # wait for default branch
+        default_branch = repo_data.get("default_branch")
+
+        if default_branch:
+            ref = requests.get(
+                f"{repo_url}/git/ref/heads/{default_branch}",
+                headers=headers
+            )
+
+            if ref.status_code == 200:
+                print("Repo fully ready ✅")
+                return True
+
+        print("Waiting for GitHub to initialize...")
+        time.sleep(1)
+
+    return False
+
+
+# ✅ CREATE FILE
 def create_file(repo_name, path, content):
 
-    # 🔥 FINAL FIX: flatten + clean path
+    # flatten + clean path
     path = (
         path.lstrip("/")
-        .replace("/", "_")      # ✅ flatten folders
+        .replace("/", "_")
         .replace("[", "")
         .replace("]", "")
     )
@@ -74,7 +101,7 @@ def create_file(repo_name, path, content):
     return r.status_code in [200, 201]
 
 
-# ✅ MAIN FUNCTION (NO TREE API ANYMORE)
+# ✅ MAIN FUNCTION
 def create_or_update_repo(project_type, files):
 
     repo_name = f"{slugify_project(project_type)}-{int(time.time())}"
@@ -82,7 +109,10 @@ def create_or_update_repo(project_type, files):
     if not create_repo(repo_name):
         return repo_name, "failed"
 
-    time.sleep(2)  # allow repo to initialize
+    # 🔥 CRITICAL FIX (replaces blind sleep)
+    if not wait_for_ready(repo_name):
+        print("❌ Repo never became ready")
+        return repo_name, "failed"
 
     success_count = 0
 
