@@ -30,13 +30,13 @@ def create_repo_with_files(repo_name, files):
 
     repo_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
 
-    # 1. Create repo (NO auto_init)
+    # ✅ FIXED (comma added)
     r = requests.post(
         "https://api.github.com/user/repos",
         json={
             "name": repo_name,
-            "private": False
-             "auto_init": True  # 🔥 REQUIRED
+            "private": False,  # ✅ FIX
+            "auto_init": True  # 🔥 REQUIRED
         },
         headers=headers
     )
@@ -47,7 +47,8 @@ def create_repo_with_files(repo_name, files):
 
     print("Repo created ✅")
 
-    time.sleep(2)
+    # 🔥 IMPORTANT: give GitHub time to initialize repo + branch
+    time.sleep(3)
 
     # 2. Build tree (ALL FILES)
     tree = []
