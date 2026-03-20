@@ -8,7 +8,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
 
 headers = {
-    "Authorization": f"Bearer {GITHUB_TOKEN}",  # ✅ IMPORTANT (Bearer for fine-grained)
+    "Authorization": f"Bearer {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json"
 }
 
@@ -23,7 +23,7 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
-# 🔥 STEP 1: CREATE REPO
+# ✅ CREATE REPO
 def create_repo(repo_name):
 
     r = requests.post(
@@ -35,34 +35,47 @@ def create_repo(repo_name):
         headers=headers
     )
 
+    print("CREATE REPO RESPONSE:", r.status_code, r.text)
+
     if r.status_code not in [201, 422]:
-        print("Repo creation failed:", r.text)
+        print("❌ Repo creation failed")
         return False
 
     print("Repo created ✅")
     return True
 
 
-# 🔥 STEP 2: FORCE INITIAL COMMIT
+# 🔥 FORCE INITIAL COMMIT (STABLE)
 def create_initial_commit(repo_name):
 
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/git/blobs"
+    base = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
 
-    # 1. Create blob (README)
-    blob = requests.post(
-        url,
+    # -----------------------
+    # 1. CREATE BLOB
+    # -----------------------
+    blob_res = requests.post(
+        f"{base}/git/blobs",
         json={
             "content": "# Atlas Project\n\nInitialized",
             "encoding": "utf-8"
         },
         headers=headers
-    ).json()
+    )
+
+    blob = blob_res.json()
+    print("BLOB:", blob)
+
+    if "sha" not in blob:
+        print("❌ Blob failed")
+        return False
 
     blob_sha = blob["sha"]
 
-    # 2. Create tree
-    tree = requests.post(
-        f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/git/trees",
+    # -----------------------
+    # 2. CREATE TREE
+    # -----------------------
+    tree_res = requests.post(
+        f"{base}/git/trees",
         json={
             "tree": [
                 {
@@ -74,25 +87,43 @@ def create_initial_commit(repo_name):
             ]
         },
         headers=headers
-    ).json()
+    )
+
+    tree = tree_res.json()
+    print("TREE:", tree)
+
+    if "sha" not in tree:
+        print("❌ Tree failed")
+        return False
 
     tree_sha = tree["sha"]
 
-    # 3. Create commit
-    commit = requests.post(
-        f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/git/commits",
+    # -----------------------
+    # 3. CREATE COMMIT
+    # -----------------------
+    commit_res = requests.post(
+        f"{base}/git/commits",
         json={
             "message": "Initial commit",
             "tree": tree_sha
         },
         headers=headers
-    ).json()
+    )
+
+    commit = commit_res.json()
+    print("COMMIT:", commit)
+
+    if "sha" not in commit:
+        print("❌ Commit failed")
+        return False
 
     commit_sha = commit["sha"]
 
-    # 4. Create branch
-    ref = requests.post(
-        f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/git/refs",
+    # -----------------------
+    # 4. CREATE BRANCH
+    # -----------------------
+    ref_res = requests.post(
+        f"{base}/git/refs",
         json={
             "ref": "refs/heads/main",
             "sha": commit_sha
@@ -100,15 +131,17 @@ def create_initial_commit(repo_name):
         headers=headers
     )
 
-    if ref.status_code not in [201, 422]:
-        print("Initial commit failed:", ref.text)
+    print("REF:", ref_res.status_code, ref_res.text)
+
+    if ref_res.status_code not in [200, 201]:
+        print("❌ Branch creation failed")
         return False
 
     print("Initial commit created ✅")
     return True
 
 
-# 🔥 STEP 3: NORMAL FILE UPLOAD (NOW IT WORKS)
+# ✅ CREATE FILE
 def create_file(repo_name, path, content):
 
     path = path.lstrip("/").replace("[", "").replace("]", "")
@@ -127,11 +160,12 @@ def create_file(repo_name, path, content):
         headers=headers
     )
 
-    print(f"{path} → {r.status_code}")
+    print(f"{path} → {r.status_code} | {r.text}")
+
     return r.status_code in [200, 201]
 
 
-# 🔥 MAIN
+# 🚀 MAIN
 def create_or_update_repo(project_type, files):
 
     repo_name = f"{slugify_project(project_type)}-{int(time.time())}"
@@ -142,6 +176,7 @@ def create_or_update_repo(project_type, files):
     time.sleep(1)
 
     if not create_initial_commit(repo_name):
+        print("❌ Initial commit failed — stopping")
         return repo_name, "failed"
 
     success = 0
