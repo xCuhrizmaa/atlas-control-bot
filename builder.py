@@ -10,7 +10,6 @@ from atlas_brain import interpret_project
 # SAFE DISCORD MESSAGE SPLITTER
 # -----------------------------
 async def send_split_message(channel, content, chunk_size=1900):
-
     for i in range(0, len(content), chunk_size):
         await channel.send(content[i:i+chunk_size])
 
@@ -31,17 +30,27 @@ def generate_files_from_json(project_json):
         # FRONTEND FILES
         for item in data.get("frontend", []):
             path = item["path"]
-            files[path] = f"// {item['description']}\n\nexport default function Page() {{\n  return <div>{item['description']}</div>\n}}"
+            files[path] = f"""// {item['description']}
+
+export default function Page() {{
+  return <div>{item['description']}</div>
+}}"""
 
         # BACKEND FILES
         for item in data.get("backend", []):
             path = item["path"]
-            files[path] = f"// {item['description']}\n\nmodule.exports = (req, res) => {{\n  res.json({{'message': '{item['description']}'}})\n}}"
+            files[path] = f"""// {item['description']}
+
+module.exports = (req, res) => {{
+  res.json({{'message': '{item['description']}'}})
+}}"""
 
         # DATABASE FILES
         for item in data.get("database", []):
             path = item["path"]
-            files[path] = f"-- {item['description']}\n\nCREATE TABLE example(id SERIAL PRIMARY KEY);"
+            files[path] = f"""-- {item['description']}
+
+CREATE TABLE example(id SERIAL PRIMARY KEY);"""
 
     except Exception as e:
         files["error.txt"] = str(e)
@@ -89,10 +98,14 @@ async def run_build_pipeline(bot, ctx, project_type):
     if dev:
         await dev.send("👨‍💻 Generating real project files...")
 
-    # ✅ FIXED LINE (THIS WAS THE BUG)
     files = generate_files_from_json(project_json)
 
-    repo_name, version = create_or_update_repo(project_type, files)
+    # 🔥 CRITICAL FIX (non-blocking GitHub call)
+    repo_name, version = await asyncio.to_thread(
+        create_or_update_repo,
+        project_type,
+        files
+    )
 
     await asyncio.sleep(1)
 
