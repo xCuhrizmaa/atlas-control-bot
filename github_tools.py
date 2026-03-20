@@ -2,7 +2,6 @@ import os
 import requests
 import re
 import time
-import base64
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
@@ -26,9 +25,10 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
-# ✅ CREATE REPO (auto creates main branch + README)
-def create_repo(repo_name):
+# 🔥 FINAL: CREATE REPO + COMMIT ALL FILES AT ONCE
+def create_repo_with_files(repo_name, files):
 
+    # 1. Create repo
     url = "https://api.github.com/user/repos"
 
     data = {
@@ -39,75 +39,77 @@ def create_repo(repo_name):
 
     r = requests.post(url, json=data, headers=headers)
 
-    if r.status_code == 201:
-        print("Repo created")
-    elif r.status_code == 422:
-        print("Repo already exists")
-    else:
-        print("Repo creation error:", r.text)
+    if r.status_code not in [201, 422]:
+        print("Repo creation failed:", r.text)
+        return
 
+    print("Repo created ✅")
 
-# ✅ WAIT UNTIL REPO IS FULLY READY
-def wait_for_repo(repo_name):
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
+    time.sleep(2)
 
-    for _ in range(10):
-        r = requests.get(url, headers=headers)
+    repo_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}"
 
-        if r.status_code == 200:
-            print("Repo is ready ✅")
-            return
+    # 2. Get default branch
+    repo_data = requests.get(repo_url, headers=headers).json()
+    default_branch = repo_data["default_branch"]
 
-        print("Waiting for repo...")
-        time.sleep(1)
+    # 3. Get latest commit
+    ref_data = requests.get(f"{repo_url}/git/ref/heads/{default_branch}", headers=headers).json()
+    latest_commit_sha = ref_data["object"]["sha"]
 
+    # 4. Get base tree
+    commit_data = requests.get(f"{repo_url}/git/commits/{latest_commit_sha}", headers=headers).json()
+    base_tree_sha = commit_data["tree"]["sha"]
 
-# ✅ CREATE FILE (🔥 FINAL STABLE VERSION)
-def create_file(repo_name, path, content):
+    # 5. Build tree (ALL FILES)
+    tree = []
 
-    # 🔥 FINAL FIX: flatten folders + remove brackets
-    path = (
-        path.lstrip("/")
-        .replace("/", "_")
-        .replace("[", "")
-        .replace("]", "")
+    for path, content in files.items():
+        clean_path = path.replace("[", "").replace("]", "")
+
+        tree.append({
+            "path": clean_path,
+            "mode": "100644",
+            "type": "blob",
+            "content": content
+        })
+
+    tree_response = requests.post(
+        f"{repo_url}/git/trees",
+        json={"base_tree": base_tree_sha, "tree": tree},
+        headers=headers
+    ).json()
+
+    new_tree_sha = tree_response["sha"]
+
+    # 6. Create commit
+    commit_response = requests.post(
+        f"{repo_url}/git/commits",
+        json={
+            "message": "Atlas AI project build",
+            "tree": new_tree_sha,
+            "parents": [latest_commit_sha]
+        },
+        headers=headers
+    ).json()
+
+    new_commit_sha = commit_response["sha"]
+
+    # 7. Update branch
+    requests.patch(
+        f"{repo_url}/git/refs/heads/{default_branch}",
+        json={"sha": new_commit_sha},
+        headers=headers
     )
 
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
-
-    encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-
-    data = {
-        "message": f"Adding {path}",
-        "content": encoded_content
-    }
-
-    response = requests.put(url, json=data, headers=headers)
-
-    print("\n====================")
-    print(f"FILE: {path}")
-    print(f"STATUS: {response.status_code}")
-    print(f"RESPONSE: {response.text}")
-    print("====================\n")
+    print("🔥 ALL FILES SUCCESSFULLY PUSHED")
 
 
+# ✅ MAIN FUNCTION
 def create_or_update_repo(project_type, files):
 
     repo_name = f"{slugify_project(project_type)}-{int(time.time())}"
 
-    create_repo(repo_name)
+    create_repo_with_files(repo_name, files)
 
-    wait_for_repo(repo_name)
-
-    # 🔥 EXTRA SAFETY DELAY
-    time.sleep(2)
-
-    version = "v1"
-
-    sorted_files = dict(sorted(files.items(), key=lambda x: x[0].count("/")))
-
-    for path, content in sorted_files.items():
-        create_file(repo_name, path, content)
-        time.sleep(0.5)
-
-    return repo_name, version
+    return repo_name, "v1"
