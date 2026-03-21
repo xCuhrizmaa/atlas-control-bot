@@ -23,51 +23,49 @@ def slugify_project(project_type):
     return f"atlas-{cleaned}"
 
 
-# 🔥 ADD AUTO DEPLOY WORKFLOW
-def add_deploy_workflow(files):
+# 🔥 FIXED: CORE FILES (NOW RAILWAY COMPATIBLE)
+def add_core_files(files):
 
-    files[".github/workflows/deploy.yml"] = f"""
-name: Deploy to Railway
+    # Root package.json (CRITICAL for Railway detection)
+    files["package.json"] = """{
+  "name": "atlas-app",
+  "version": "1.0.0",
+  "main": "backend/app.js",
+  "scripts": {
+    "start": "node backend/app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}"""
 
-on:
-  push:
-    branches:
-      - main
+    # .gitignore
+    files[".gitignore"] = "node_modules\n.env"
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    # 🔥 Ensure backend entry exists
+    files["backend/app.js"] = """const express = require("express");
+const app = express();
 
-    steps:
-      - uses: actions/checkout@v3
+app.get("/", (req, res) => {
+  res.send("Atlas app is live 🚀");
+});
 
-      - name: Deploy to Railway
-        run: |
-          curl -X POST https://backboard.railway.app/project/${{{{ secrets.RAILWAY_PROJECT_ID }}}}/deploy \
-          -H "Authorization: Bearer ${{{{ secrets.RAILWAY_TOKEN }}}}"
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
 """
 
     return files
 
 
-# 🔥 ADD REQUIRED PROJECT FILES
-def add_core_files(files):
-
-    files["package.json"] = """{
-  "name": "atlas-app",
-  "version": "1.0.0",
-  "main": "backend/api/app.js",
-  "scripts": {
-    "start": "node backend/api/app.js"
-  }
-}"""
-
-    files[".gitignore"] = "node_modules\n.env"
-
+# 🔥 REMOVE BROKEN AUTO-DEPLOY (we’ll re-add later properly)
+def add_deploy_workflow(files):
     return files
 
 
-# 🔥 GET FILE SHA (FOR UPDATES)
+# 🔥 GET FILE SHA
 def get_file_sha(repo_name, path):
 
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{repo_name}/contents/{path}"
@@ -126,8 +124,10 @@ def update_repo(repo_name, files):
 # 🚀 MAIN
 def create_or_update_repo(project_type, files, existing_repo=None):
 
-    # 🔥 ADD DEPLOY + CORE FILES FIRST
+    # 🔥 ALWAYS ADD CORE FILES
     files = add_core_files(files)
+
+    # 🔥 (TEMP DISABLED) DEPLOY WORKFLOW
     files = add_deploy_workflow(files)
 
     # 🔁 UPDATE MODE
@@ -142,7 +142,7 @@ def create_or_update_repo(project_type, files, existing_repo=None):
     if not create_repo(repo_name):
         return repo_name, "failed"
 
-    # 🔥 INIT REPO
+    # INIT README
     create_or_update_file(
         repo_name,
         "README.md",
