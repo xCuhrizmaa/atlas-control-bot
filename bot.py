@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from monitoring import check_api, monitor_services
 from agents import agents_status
-from builder import run_build_pipeline
+from builder import run_build_pipeline, run_update_pipeline  # ✅ ADDED
 
 # -----------------------------
 # LOAD ENV VARIABLES
@@ -45,9 +45,17 @@ async def on_ready():
 # BUILD COMMAND
 # -----------------------------
 @bot.command()
-async def build(ctx, project_type: str):
+async def build(ctx, *, project_type: str):  # 🔥 FIXED (* allows full sentence)
 
     await run_build_pipeline(bot, ctx, project_type)
+
+# -----------------------------
+# 🔁 UPDATE COMMAND (NEW)
+# -----------------------------
+@bot.command()
+async def update(ctx, *, request: str):
+
+    await run_update_pipeline(bot, ctx, request)
 
 # -----------------------------
 # AGENTS STATUS
@@ -130,15 +138,9 @@ async def command_list(ctx):
     embed.add_field(
         name="Project Builder",
         value="""
-!build api
-!build website
-!build mobile-app
-!build barber-booking-app
-!build saas
-!build ecommerce
-!build ai-agent
-!build chatbot
-!build discord-bot
+!build cookie ordering app
+!update add login system
+!update add checkout page
 """,
         inline=False
     )
@@ -154,7 +156,7 @@ async def command_list(ctx):
 async def on_command_error(ctx, error):
 
     if isinstance(error, commands.CommandNotFound):
-        return  # prevents duplicate responses
+        return
 
     print(error)
     await ctx.send(f"⚠️ Error: {error}")
