@@ -7,6 +7,18 @@ from atlas_brain import interpret_project
 
 
 # -----------------------------
+# 🔥 SESSION MEMORY (NEW)
+# -----------------------------
+user_sessions = {}
+
+def save_repo(user_id, repo_name):
+    user_sessions[user_id] = repo_name
+
+def get_repo(user_id):
+    return user_sessions.get(user_id)
+
+
+# -----------------------------
 # SAFE DISCORD MESSAGE SPLITTER
 # -----------------------------
 async def send_split_message(channel, content, chunk_size=1900):
@@ -73,15 +85,11 @@ async def run_build_pipeline(bot, ctx, project_type):
     security = discord.utils.get(guild.text_channels, name="security")
     updates = discord.utils.get(guild.text_channels, name="project-updates")
 
-    # -----------------------------
     # PM
-    # -----------------------------
     if pm:
         await pm.send("📋 Build request received: " + project_type)
 
-    # -----------------------------
     # ARCHITECT
-    # -----------------------------
     if architect:
         await architect.send("🧠 Designing system with AI...")
 
@@ -92,38 +100,33 @@ async def run_build_pipeline(bot, ctx, project_type):
 
     await asyncio.sleep(1)
 
-    # -----------------------------
     # DEV
-    # -----------------------------
     if dev:
         await dev.send("👨‍💻 Generating real project files...")
 
     files = generate_files_from_json(project_json)
 
-    # 🔥 CRITICAL FIX (non-blocking GitHub call)
+    # 🔥 BUILD (non-blocking)
     repo_name, version = await asyncio.to_thread(
         create_or_update_repo,
         project_type,
         files
     )
 
+    # 🔥 SAVE REPO FOR FUTURE UPDATES
+    save_repo(ctx.author.id, repo_name)
+
     await asyncio.sleep(1)
 
-    # -----------------------------
     # QA
-    # -----------------------------
     if qa:
         await qa.send("🧪 Running automated tests...")
 
-    # -----------------------------
     # SECURITY
-    # -----------------------------
     if security:
         await security.send("🔐 Running security scan...")
 
-    # -----------------------------
     # UPDATES
-    # -----------------------------
     if updates:
         embed = discord.Embed(
             title="📦 Project Generated",
@@ -137,3 +140,31 @@ async def run_build_pipeline(bot, ctx, project_type):
         await updates.send(embed=embed)
 
     await ctx.send("🚀 Build complete → " + repo_name)
+
+
+# -----------------------------
+# 🔁 UPDATE PIPELINE (NEW)
+# -----------------------------
+async def run_update_pipeline(bot, ctx, request):
+
+    repo_name = get_repo(ctx.author.id)
+
+    if not repo_name:
+        await ctx.send("❌ No project found. Run !build first.")
+        return
+
+    await ctx.send("🧠 Updating your project...")
+
+    project_json = interpret_project(request)
+
+    files = generate_files_from_json(project_json)
+
+    # 🔥 UPDATE SAME REPO (non-blocking)
+    repo_name, version = await asyncio.to_thread(
+        create_or_update_repo,
+        request,
+        files,
+        repo_name  # 🔥 THIS TRIGGERS UPDATE MODE
+    )
+
+    await ctx.send(f"🔁 Project updated → {repo_name}")
